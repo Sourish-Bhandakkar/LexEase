@@ -12,6 +12,8 @@ Usage:
 
 import logging
 
+from sqlalchemy import inspect, text
+
 from app.database.models import Base
 from app.database.session import engine
 
@@ -31,7 +33,45 @@ def init_db() -> None:
     """
     try:
         Base.metadata.create_all(bind=engine)
+        _migrate_clause_feedback_source_group()
+        _migrate_adaptive_model_versions_display_label()
         logger.info("Database tables initialized successfully.")
     except Exception as exc:
         logger.error(f"Database initialization failed: {exc}")
         raise
+
+
+def _migrate_clause_feedback_source_group() -> None:
+    """Add the adaptive-learning grouping column to databases created earlier."""
+    inspector = inspect(engine)
+    if not inspector.has_table("clause_feedback"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("clause_feedback")}
+    with engine.begin() as connection:
+        if "source_group_id" not in columns:
+            # Keep existing reviewed/pending feedback. Its original document group
+            # is unknown, so assign each legacy row a unique group rather than
+            # incorrectly grouping unrelated clauses together.
+            connection.execute(text("ALTER TABLE clause_feedback ADD COLUMN source_group_id VARCHAR"))
+        connection.execute(text(
+            "UPDATE clause_feedback "
+            "SET source_group_id = 'legacy_' || id "
+            "WHERE source_group_id IS NULL OR source_group_id = ''"
+        ))
+
+    feedback_table = Base.metadata.tables["clause_feedback"]
+    for index in feedback_table.indexes:
+        index.create(bind=engine, checkfirst=True)
+
+
+def _migrate_adaptive_model_versions_display_label() -> None:
+    """Add display_label column to adaptive_model_versions for existing databases."""
+    inspector = inspect(engine)
+    if not inspector.has_table("adaptive_model_versions"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("adaptive_model_versions")}
+    if "display_label" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE adaptive_model_versions ADD COLUMN display_label VARCHAR"))

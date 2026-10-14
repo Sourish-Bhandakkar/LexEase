@@ -31,6 +31,14 @@ LexEase is designed around a modular, layered backend architecture built with Fa
 +-------------------------------------------------------------------------------------------------------------------+
 ```
 
+## Adaptive Learning
+
+User corrections are stored as consented, PII-masked clause rows with `pending` status. A token-protected reviewer approves or rejects each clause. The explicit ML training command exports approved rows only, checks for overlap with the fixed held-out set, fine-tunes a separate candidate risk checkpoint, and compares accuracy, macro F1, and high-risk recall against the active model. The active risk-model pointer changes only when every configured acceptance check passes. Uploaded documents and model predictions alone never create training labels.
+
+## Clause Drafting
+
+The clause drafting flow accepts up to eight user-selected clauses and requires explicit consent before sending selected clause text to the configured AI provider. Rewrites pass the same response-schema and material-term validation, including at most one corrective retry when new material terms are detected. The user can edit or exclude suggestions before downloading a proposed PDF; the original upload is not changed or persisted by this flow.
+
 ---
 
 ## 1. Multi-Provider AI Architecture

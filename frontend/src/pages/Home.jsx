@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   checkHealth,
   uploadDocument,
@@ -11,11 +11,21 @@ import Navbar from '../components/Navbar'
 import FileUpload from '../components/FileUpload'
 import DocumentSummary from '../components/DocumentSummary'
 import ClauseRiskAnalysis from '../components/ClauseRiskAnalysis'
+import DocumentLearningSubmission from '../components/DocumentLearningSubmission'
 import DocumentQA from '../components/DocumentQA'
 import DocumentProcessor from '../components/DocumentProcessor'
+import { getCurrentDocumentFile, setCurrentDocumentFile } from '../documentFileStore'
+
+import {
+  IconDocument,
+  IconSummary,
+  IconScales,
+  IconChat,
+} from '../components/Icons'
 
 function Home() {
   const location = useLocation()
+  const navigate = useNavigate()
 
   // Backend Health State
   const [healthStatus, setHealthStatus] = useState(null)
@@ -40,6 +50,35 @@ function Home() {
 
   // Active Navigation Tab
   const [activeTab, setActiveTab] = useState('summary') // 'summary' | 'risks' | 'qa'
+
+  const tabOrder = ['summary', 'risks', 'qa']
+  const tabRefs = useRef({})
+
+  const handleTabKeyDown = (e, currentTab) => {
+    const currentIndex = tabOrder.indexOf(currentTab)
+    if (currentIndex === -1) return
+
+    let nextIndex = -1
+    if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      nextIndex = (currentIndex + 1) % tabOrder.length
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      nextIndex = (currentIndex - 1 + tabOrder.length) % tabOrder.length
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      nextIndex = 0
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      nextIndex = tabOrder.length - 1
+    }
+
+    if (nextIndex !== -1) {
+      const nextTab = tabOrder[nextIndex]
+      setActiveTab(nextTab)
+      tabRefs.current[nextTab]?.focus()
+    }
+  }
 
   // Lightweight Mouse Ambient Light Handler (Zero React re-renders, max 5-10px shift)
   useEffect(() => {
@@ -97,6 +136,16 @@ function Home() {
 
   // Automatically trigger native file picker if navigated with triggerUpload state
   useEffect(() => {
+    const workspace = location.state?.workspace
+    if (workspace?.documentData) {
+      setDocumentData(workspace.documentData)
+      setSelectedFile(getCurrentDocumentFile())
+      setSummaryData(workspace.summaryData || null)
+      setClauseAnalysisData(workspace.clauseAnalysisData || null)
+      setActiveTab(workspace.activeTab || 'risks')
+      setProcessingStage('ready')
+    }
+
     if (location.state?.triggerUpload) {
       window.history.replaceState({}, document.title)
       setTimeout(() => {
@@ -142,6 +191,7 @@ function Home() {
 
   // Full Document Upload & Pipeline Trigger
   const handleFileUpload = async (file) => {
+    setCurrentDocumentFile(file)
     setSelectedFile(file)
     setProcessingStage('uploading')
     setIsUploading(true)
@@ -224,6 +274,7 @@ function Home() {
 
   // Reset Document State to Upload New
   const handleResetDocument = () => {
+    setCurrentDocumentFile(null)
     setDocumentData(null)
     setSummaryData(null)
     setClauseAnalysisData(null)
@@ -255,7 +306,7 @@ function Home() {
         healthStatus={healthStatus}
         checkingHealth={checkingHealth}
         onCheckHealth={verifyHealth}
-        hasDocument={Boolean(documentData)}
+        hasDocument={Boolean(documentData) || processingStage !== 'idle'}
         onResetDocument={handleResetDocument}
       />
 
@@ -284,28 +335,28 @@ function Home() {
           </div>
         ) : (
           /* ================= Document Analysis Dashboard ================= */
-          <div className="space-y-6">
-            {/* Document Context Header Banner */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white border border-[#DCE6E0] shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-              <div className="flex items-start sm:items-center gap-4 min-w-0">
-                <div className="w-12 h-12 rounded-2xl bg-[#E8F1EC] border border-[#DCE6E0] text-[#176B4D] flex items-center justify-center text-xl shrink-0 shadow-2xs">
-                  📄
+          <div className="space-y-5">
+            {/* Persistent Legal Document Workstation Header */}
+            <div className="p-4 sm:p-5 rounded-xl bg-white border border-[#D4DFD9] shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-[#12372A] border border-[#176B4D]/30 text-[#E8F1EC] flex items-center justify-center shrink-0 shadow-2xs">
+                  <IconDocument className="w-5 h-5 text-[#E8F1EC]" />
                 </div>
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-base sm:text-lg font-bold text-[#16221C] truncate tracking-tight">
+                    <h2 className="text-base sm:text-lg font-bold text-[#16221C] truncate tracking-tight font-sans">
                       {documentData.filename}
                     </h2>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-[#E8F1EC] text-[#176B4D] border border-[#DCE6E0]">
-                      Verified Context
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#E8F1EC] text-[#176B4D] border border-[#C8DECE]">
+                      Active Review
                     </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#66736C]">
-                    <span className="font-medium text-[#16221C]">
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-[#526058]">
+                    <span className="font-semibold text-[#16221C]">
                       {documentData.page_count} {documentData.page_count === 1 ? 'page' : 'pages'}
                     </span>
                     <span className="text-[#DCE6E0]">&bull;</span>
-                    <span className="font-medium text-[#16221C]">
+                    <span className="font-semibold text-[#16221C]">
                       {documentData.clauses?.length || 0} clauses detected
                     </span>
                     <span className="text-[#DCE6E0]">&bull;</span>
@@ -315,8 +366,8 @@ function Home() {
                     {documentData.document_id && (
                       <>
                         <span className="text-[#DCE6E0]">&bull;</span>
-                        <span className="text-[#8C9A92] font-mono text-[11px]">
-                          ID: {documentData.document_id.substring(0, 8)}...
+                        <span className="text-[#526058] font-mono text-[11px] uppercase tracking-wide">
+                          REF: DOC-{documentData.document_id.substring(0, 8)}
                         </span>
                       </>
                     )}
@@ -325,23 +376,23 @@ function Home() {
               </div>
 
               {/* Status & Actions */}
-              <div className="flex items-center gap-3 self-end md:self-center">
+              <div className="flex items-center gap-2.5 self-end md:self-center shrink-0">
                 {isSummarizing || isAnalyzingClauses ? (
-                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FEF3E2] border border-[#F8DEC0] text-[#D18A24] text-xs font-bold">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#FEF3E2] border border-[#F8DEC0] text-[#D18A24] text-xs font-bold font-mono">
                     <span className="w-2 h-2 rounded-full bg-[#D18A24] animate-pulse"></span>
                     <span>Analyzing Document...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#E8F1EC] border border-[#DCE6E0] text-[#176B4D] text-xs font-bold">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#E8F1EC] border border-[#C8DECE] text-[#176B4D] text-xs font-bold font-mono">
                     <span className="w-2 h-2 rounded-full bg-[#3E8E63]"></span>
-                    <span>Analysis Complete</span>
+                    <span>Analysis Ready</span>
                   </div>
                 )}
 
                 <button
                   type="button"
                   onClick={handleResetDocument}
-                  className="px-3.5 py-1.5 text-xs font-semibold rounded-xl text-[#66736C] hover:text-[#16221C] bg-[#F3F7F5] border border-[#DCE6E0] hover:border-[#176B4D]/40 transition-all focus:outline-none"
+                  className="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-[#526058] hover:text-[#16221C] bg-[#F8FAF8] border border-[#DCE6E0] hover:border-[#176B4D]/50 hover:bg-white transition-all focus:outline-none focus:ring-2 focus:ring-[#176B4D]/25 cursor-pointer shadow-2xs"
                   title="Upload a different document"
                 >
                   Change Document
@@ -349,19 +400,30 @@ function Home() {
               </div>
             </div>
 
-            {/* Dashboard Segmented Tabs */}
-            <div className="border-b border-[#DCE6E0]">
-              <nav className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-px">
+            {/* Workstation Navigation Tabs - Accessible tablist pattern */}
+            <div className="border-b border-[#DCE6E0] pt-0.5">
+              <div
+                role="tablist"
+                aria-label="Document Analysis Views"
+                className="flex space-x-1.5 sm:space-x-2 overflow-x-auto pb-1"
+              >
                 <button
+                  ref={(el) => (tabRefs.current['summary'] = el)}
+                  id="tab-summary"
+                  role="tab"
+                  aria-selected={activeTab === 'summary'}
+                  aria-controls="tabpanel-summary"
+                  tabIndex={activeTab === 'summary' ? 0 : -1}
                   type="button"
                   onClick={() => setActiveTab('summary')}
-                  className={`py-2.5 px-4 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 flex items-center gap-2.5 cursor-pointer whitespace-nowrap ${
+                  onKeyDown={(e) => handleTabKeyDown(e, 'summary')}
+                  className={`py-2 px-3.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#176B4D]/25 ${
                     activeTab === 'summary'
-                      ? 'border-[#176B4D] text-[#12372A] bg-white shadow-2xs'
-                      : 'border-transparent text-[#66736C] hover:text-[#16221C] hover:bg-[#F3F7F5]'
+                      ? 'bg-[#12372A] text-white shadow-2xs'
+                      : 'text-[#526058] hover:text-[#16221C] hover:bg-[#F3F7F5]'
                   }`}
                 >
-                  <span>📋</span>
+                  <IconSummary className={`w-4 h-4 ${activeTab === 'summary' ? 'text-[#E8F1EC]' : 'text-[#526058]'}`} />
                   <span>Document Summary</span>
                   {isSummarizing && (
                     <span className="w-1.5 h-1.5 rounded-full bg-[#176B4D] animate-pulse"></span>
@@ -369,18 +431,25 @@ function Home() {
                 </button>
 
                 <button
+                  ref={(el) => (tabRefs.current['risks'] = el)}
+                  id="tab-risks"
+                  role="tab"
+                  aria-selected={activeTab === 'risks'}
+                  aria-controls="tabpanel-risks"
+                  tabIndex={activeTab === 'risks' ? 0 : -1}
                   type="button"
                   onClick={() => setActiveTab('risks')}
-                  className={`py-2.5 px-4 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 flex items-center gap-2.5 cursor-pointer whitespace-nowrap ${
+                  onKeyDown={(e) => handleTabKeyDown(e, 'risks')}
+                  className={`py-2 px-3.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#176B4D]/25 ${
                     activeTab === 'risks'
-                      ? 'border-[#176B4D] text-[#12372A] bg-white shadow-2xs'
-                      : 'border-transparent text-[#66736C] hover:text-[#16221C] hover:bg-[#F3F7F5]'
+                      ? 'bg-[#12372A] text-white shadow-2xs'
+                      : 'text-[#526058] hover:text-[#16221C] hover:bg-[#F3F7F5]'
                   }`}
                 >
-                  <span>⚖️</span>
+                  <IconScales className={`w-4 h-4 ${activeTab === 'risks' ? 'text-[#E8F1EC]' : 'text-[#526058]'}`} />
                   <span>Clause Risk Analysis</span>
                   {clauseAnalysisData?.results?.length > 0 && (
-                    <span className="px-2 py-0.5 rounded-md bg-[#E8F1EC] text-[11px] text-[#176B4D] font-mono font-bold border border-[#DCE6E0]">
+                    <span className={`px-1.5 py-0.2 rounded text-[11px] font-mono font-bold ${activeTab === 'risks' ? 'bg-white/20 text-white' : 'bg-[#E8F1EC] text-[#176B4D] border border-[#C8DECE]'}`}>
                       {clauseAnalysisData.results.length}
                     </span>
                   )}
@@ -390,48 +459,97 @@ function Home() {
                 </button>
 
                 <button
+                  ref={(el) => (tabRefs.current['qa'] = el)}
+                  id="tab-qa"
+                  role="tab"
+                  aria-selected={activeTab === 'qa'}
+                  aria-controls="tabpanel-qa"
+                  tabIndex={activeTab === 'qa' ? 0 : -1}
                   type="button"
                   onClick={() => setActiveTab('qa')}
-                  className={`py-2.5 px-4 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 flex items-center gap-2.5 cursor-pointer whitespace-nowrap ${
+                  onKeyDown={(e) => handleTabKeyDown(e, 'qa')}
+                  className={`py-2 px-3.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#176B4D]/25 ${
                     activeTab === 'qa'
-                      ? 'border-[#176B4D] text-[#12372A] bg-white shadow-2xs'
-                      : 'border-transparent text-[#66736C] hover:text-[#16221C] hover:bg-[#F3F7F5]'
+                      ? 'bg-[#12372A] text-white shadow-2xs'
+                      : 'text-[#526058] hover:text-[#16221C] hover:bg-[#F3F7F5]'
                   }`}
                 >
-                  <span>💬</span>
+                  <IconChat className={`w-4 h-4 ${activeTab === 'qa' ? 'text-[#E8F1EC]' : 'text-[#526058]'}`} />
                   <span>Ask Document (Q&amp;A)</span>
                 </button>
-              </nav>
+              </div>
             </div>
 
-            {/* Tab View Content */}
+            {/* Tab View Content - Accessible tabpanel pattern */}
             <div className="pt-2">
-              {activeTab === 'summary' && (
-                <DocumentSummary
-                  summaryData={summaryData}
-                  isLoading={isSummarizing}
-                  error={summaryError}
-                  onRetry={() => handleSummarize(documentData.clauses)}
-                />
-              )}
+              <div
+                role="tabpanel"
+                id="tabpanel-summary"
+                aria-labelledby="tab-summary"
+                hidden={activeTab !== 'summary'}
+              >
+                {activeTab === 'summary' && (
+                  <DocumentSummary
+                    summaryData={summaryData}
+                    clauseAnalysisData={clauseAnalysisData}
+                    isLoading={isSummarizing}
+                    error={summaryError}
+                    onRetry={() => handleSummarize(documentData.clauses)}
+                  />
+                )}
+              </div>
 
-              {activeTab === 'risks' && (
-                <ClauseRiskAnalysis
-                  analysisData={clauseAnalysisData}
-                  originalClauses={documentData.clauses}
-                  isLoading={isAnalyzingClauses}
-                  error={clauseAnalysisError}
-                  onRetry={() => handleAnalyzeClauses(documentData.clauses)}
-                />
-              )}
+              <div
+                role="tabpanel"
+                id="tabpanel-risks"
+                aria-labelledby="tab-risks"
+                hidden={activeTab !== 'risks'}
+              >
+                {activeTab === 'risks' && (
+                  <>
+                    <ClauseRiskAnalysis
+                      analysisData={clauseAnalysisData}
+                      originalClauses={documentData.clauses}
+                      isLoading={isAnalyzingClauses}
+                      error={clauseAnalysisError}
+                      onRetry={() => handleAnalyzeClauses(documentData.clauses)}
+                    />
+                    {clauseAnalysisData && (
+                      <DocumentLearningSubmission
+                        clauses={documentData.clauses}
+                        analysisData={clauseAnalysisData}
+                        onDraftSafer={() => navigate('/clause-drafting', {
+                          state: {
+                            workspace: {
+                              documentData,
+                              summaryData,
+                              clauseAnalysisData,
+                              selectedFile,
+                              sourceFile: selectedFile || getCurrentDocumentFile(),
+                              activeTab: 'risks',
+                            },
+                          },
+                        })}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
 
-              {activeTab === 'qa' && (
-                <DocumentQA
-                  documentId={documentData.document_id}
-                  filename={documentData.filename}
-                  onSelectClause={handleSelectClause}
-                />
-              )}
+              <div
+                role="tabpanel"
+                id="tabpanel-qa"
+                aria-labelledby="tab-qa"
+                hidden={activeTab !== 'qa'}
+              >
+                {activeTab === 'qa' && (
+                  <DocumentQA
+                    documentId={documentData.document_id}
+                    filename={documentData.filename}
+                    onSelectClause={handleSelectClause}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}

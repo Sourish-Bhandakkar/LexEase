@@ -1,4 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
+import {
+  IconAlertTriangle,
+  IconAlertCircle,
+  IconCheckCircle,
+  IconInfo,
+  IconSearch,
+  IconLightbulb,
+  IconDocument,
+} from './Icons'
 
 // Lightweight Animated Counter Hook for smooth metrics count-up (0 -> target)
 function useCountUp(target, duration = 850) {
@@ -56,7 +65,6 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
   const [filterRisk, setFilterRisk] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedClauses, setExpandedClauses] = useState({})
-
   // Map original clause text by clause_id for rapid lookup
   const clauseTextMap = useMemo(() => {
     const map = new Map()
@@ -161,8 +169,8 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
   if (error) {
     return (
       <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#F5C2C2] space-y-4 text-center shadow-sm">
-        <div className="w-12 h-12 rounded-full bg-[#FFF2F2] border border-[#F5C2C2] text-[#C94A4A] flex items-center justify-center mx-auto text-xl">
-          ⚠️
+        <div className="w-12 h-12 rounded-full bg-[#FFF2F2] border border-[#F5C2C2] text-[#C94A4A] flex items-center justify-center mx-auto">
+          <IconAlertTriangle className="w-6 h-6 text-[#C94A4A]" />
         </div>
         <div className="space-y-1">
           <h3 className="text-base font-bold text-[#C94A4A]">
@@ -191,13 +199,21 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
   }
 
   return (
-    <div className="space-y-6">
-      {/* Overall Liability Assessment & Risk Metrics Banner */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-white border border-[#DCE6E0] shadow-sm space-y-6">
-        <div className="flex flex-col lg:flex-row items-center gap-6">
-          {/* Circular SVG Gauge Widget */}
-          <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl bg-[#F8FAF8] border border-[#DCE6E0] shrink-0 w-full lg:w-auto">
-            <div className="relative flex items-center justify-center w-28 h-28">
+    <div className="space-y-5">
+      {/* Integrated Overall Liability & Risk Summary Bar */}
+      <div className="p-4 sm:p-5 rounded-xl bg-white border border-[#D4DFD9] shadow-xs space-y-4">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-5">
+          {/* Primary Analytical Instrument: Contract Risk Index Gauge */}
+          <div
+            className={`flex items-center gap-4.5 p-4 rounded-xl border shrink-0 shadow-2xs ${
+              riskRating === 'High'
+                ? 'bg-[#FFF5F5] border-[#F5C2C2] border-l-[3.5px] border-l-[#C94A4A]'
+                : riskRating === 'Medium'
+                ? 'bg-[#FFF8EE] border-[#F8DEC0] border-l-[3.5px] border-l-[#D18A24]'
+                : 'bg-[#F3F8F5] border-[#C8DECE] border-l-[3.5px] border-l-[#3E8E63]'
+            }`}
+          >
+            <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
                 {/* Background Ring */}
                 <circle
@@ -205,7 +221,7 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
                   cy="60"
                   r="48"
                   stroke="#E8F1EC"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   fill="transparent"
                 />
                 {/* Dynamic Active Arc */}
@@ -214,159 +230,202 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
                   cy="60"
                   r="48"
                   stroke={gaugeColor}
-                  strokeWidth="8"
+                  strokeWidth="10"
                   fill="transparent"
                   strokeDasharray="301.6"
                   strokeDashoffset={301.6 - (301.6 * riskScore) / 100}
                   strokeLinecap="round"
-                  className="transition-all duration-1000 ease-out"
+                  className="transition-all duration-700 ease-out"
                 />
               </svg>
               <div className="absolute text-center flex flex-col items-center justify-center">
-                <span className="text-2xl font-extrabold text-[#16221C] tracking-tight font-mono">
+                <span className="text-xl font-extrabold text-[#16221C] tracking-tight font-mono">
                   {animatedScore}
                 </span>
-                <span className="text-[10px] text-[#8C9A92] font-mono">
+                <span className="text-[9px] text-[#526058] font-mono uppercase">
                   / 100
                 </span>
               </div>
             </div>
 
-            <div className="text-center sm:text-left space-y-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#66736C] block">
-                Overall Liability
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#526058] block font-mono">
+                Contract Risk Index
               </span>
-              <div>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wide border ${
+                  riskRating === 'High'
+                    ? 'bg-[#FFF2F2] text-[#C94A4A] border-[#F5C2C2]'
+                    : riskRating === 'Medium'
+                    ? 'bg-[#FEF3E2] text-[#D18A24] border-[#F8DEC0]'
+                    : 'bg-[#E8F1EC] text-[#3E8E63] border-[#C8DECE]'
+                }`}
+              >
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
+                  className={`w-1.5 h-1.5 rounded-full ${
                     riskRating === 'High'
-                      ? 'bg-[#FFF2F2] text-[#C94A4A] border-[#F5C2C2]'
+                      ? 'bg-[#C94A4A]'
                       : riskRating === 'Medium'
-                      ? 'bg-[#FEF3E2] text-[#D18A24] border-[#F8DEC0]'
-                      : 'bg-[#E8F1EC] text-[#3E8E63] border-[#C8DECE]'
+                      ? 'bg-[#D18A24]'
+                      : 'bg-[#3E8E63]'
                   }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      riskRating === 'High'
-                        ? 'bg-[#C94A4A] animate-pulse'
-                        : riskRating === 'Medium'
-                        ? 'bg-[#D18A24]'
-                        : 'bg-[#3E8E63]'
-                    }`}
-                  ></span>
-                  {riskRating} Exposure
-                </span>
-              </div>
-              <p className="text-[11px] text-[#66736C] max-w-[210px] leading-relaxed pt-0.5">
-                Weighted risk index synthesized from clause severity.
+                />
+                {riskRating} Exposure
+              </span>
+              <p className="text-[11px] text-[#526058] leading-tight">
+                Severity weighted risk score
               </p>
             </div>
           </div>
 
-          {/* Interactive Animated Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 w-full">
-            {/* Total */}
+          {/* Subordinate Metric Counters Panel */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
+            {/* Total Clauses */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={filterRisk === 'all'}
+              aria-label="Filter by all clauses"
               onClick={() => setFilterRisk('all')}
-              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setFilterRisk('all')}
+              className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-[#176B4D]/30 ${
                 filterRisk === 'all'
-                  ? 'bg-[#E8F1EC] border-[#176B4D] shadow-xs ring-1 ring-[#176B4D]/20'
-                  : 'bg-[#F8FAF8] border-[#DCE6E0] hover:border-[#176B4D]/40 hover:bg-white'
+                  ? 'bg-[#E8F1EC] border-[#176B4D] shadow-2xs ring-2 ring-[#176B4D]/25 border-l-[3.5px] border-l-[#176B4D]'
+                  : 'bg-[#F8FAF8] border-[#DCE6E0] border-l-[3.5px] border-l-[#176B4D] hover:border-[#176B4D]/60 hover:bg-white'
               }`}
             >
-              <span className="text-[11px] font-bold text-[#66736C] uppercase tracking-wider block">
+              <span className="text-[10px] font-bold text-[#526058] uppercase tracking-wider block font-mono">
                 Total Clauses
               </span>
-              <div className="text-2xl font-extrabold text-[#16221C] mt-1 font-mono">
+              <div
+                className={`text-xl font-extrabold mt-0.5 font-mono ${
+                  filterRisk === 'all' ? 'text-[#12372A]' : 'text-[#16221C]'
+                }`}
+              >
                 {animatedTotal}
               </div>
-              <span className="text-[10px] text-[#8C9A92]">Click to view all</span>
+              <span className="text-[10px] text-[#526058]">All provisions</span>
             </div>
 
             {/* High Risk */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={filterRisk === 'high'}
+              aria-label="Filter by high risk clauses"
               onClick={() => setFilterRisk(filterRisk === 'high' ? 'all' : 'high')}
-              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              onKeyDown={(e) =>
+                (e.key === 'Enter' || e.key === ' ') &&
+                setFilterRisk(filterRisk === 'high' ? 'all' : 'high')
+              }
+              className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-[#C94A4A]/30 ${
                 filterRisk === 'high'
-                  ? 'bg-[#FFF2F2] border-[#C94A4A] shadow-xs ring-1 ring-[#C94A4A]/30'
-                  : 'bg-[#F8FAF8] border-[#DCE6E0] hover:border-[#C94A4A]/40 hover:bg-[#FFF2F2]/50'
+                  ? 'bg-[#FFF0F0] border-[#C94A4A] shadow-2xs ring-2 ring-[#C94A4A]/30 border-l-[3.5px] border-l-[#C94A4A]'
+                  : 'bg-[#FFF5F5] border-[#F5C2C2] border-l-[3.5px] border-l-[#C94A4A] hover:border-[#C94A4A] hover:bg-[#FFF0F0]'
               }`}
             >
-              <span className="text-[11px] font-bold text-[#C94A4A] uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[#B43838] uppercase tracking-wider flex items-center gap-1.5 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#C94A4A]"></span> High Risk
               </span>
-              <div className="text-2xl font-extrabold text-[#C94A4A] mt-1 font-mono">
+              <div
+                className={`text-xl font-extrabold mt-0.5 font-mono ${
+                  filterRisk === 'high' ? 'text-[#962828]' : 'text-[#B43838]'
+                }`}
+              >
                 {animatedHigh}
               </div>
-              <span className="text-[10px] text-[#C94A4A]/90">Immediate attention</span>
+              <span className="text-[10px] text-[#8A3B3B]">Action required</span>
             </div>
 
             {/* Medium Risk */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={filterRisk === 'medium'}
+              aria-label="Filter by medium risk clauses"
               onClick={() => setFilterRisk(filterRisk === 'medium' ? 'all' : 'medium')}
-              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              onKeyDown={(e) =>
+                (e.key === 'Enter' || e.key === ' ') &&
+                setFilterRisk(filterRisk === 'medium' ? 'all' : 'medium')
+              }
+              className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-[#D18A24]/30 ${
                 filterRisk === 'medium'
-                  ? 'bg-[#FEF3E2] border-[#D18A24] shadow-xs ring-1 ring-[#D18A24]/30'
-                  : 'bg-[#F8FAF8] border-[#DCE6E0] hover:border-[#D18A24]/40 hover:bg-[#FEF3E2]/50'
+                  ? 'bg-[#FEF1DC] border-[#D18A24] shadow-2xs ring-2 ring-[#D18A24]/30 border-l-[3.5px] border-l-[#D18A24]'
+                  : 'bg-[#FEF9F2] border-[#F8DEC0] border-l-[3.5px] border-l-[#D18A24] hover:border-[#D18A24] hover:bg-[#FEF3E2]'
               }`}
             >
-              <span className="text-[11px] font-bold text-[#D18A24] uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[#A35E05] uppercase tracking-wider flex items-center gap-1.5 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#D18A24]"></span> Medium Risk
               </span>
-              <div className="text-2xl font-extrabold text-[#D18A24] mt-1 font-mono">
+              <div
+                className={`text-xl font-extrabold mt-0.5 font-mono ${
+                  filterRisk === 'medium' ? 'text-[#874900]' : 'text-[#A35E05]'
+                }`}
+              >
                 {animatedMedium}
               </div>
-              <span className="text-[10px] text-[#D18A24]/90">Review terms</span>
+              <span className="text-[10px] text-[#8C5D18]">Caution advised</span>
             </div>
 
             {/* Low Risk */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={filterRisk === 'low'}
+              aria-label="Filter by low risk clauses"
               onClick={() => setFilterRisk(filterRisk === 'low' ? 'all' : 'low')}
-              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+              onKeyDown={(e) =>
+                (e.key === 'Enter' || e.key === ' ') &&
+                setFilterRisk(filterRisk === 'low' ? 'all' : 'low')
+              }
+              className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-[#3E8E63]/30 ${
                 filterRisk === 'low'
-                  ? 'bg-[#E8F1EC] border-[#3E8E63] shadow-xs ring-1 ring-[#3E8E63]/30'
-                  : 'bg-[#F8FAF8] border-[#DCE6E0] hover:border-[#3E8E63]/40 hover:bg-[#E8F1EC]/50'
+                  ? 'bg-[#E4ECE7] border-[#3E8E63] shadow-2xs ring-2 ring-[#3E8E63]/30 border-l-[3.5px] border-l-[#3E8E63]'
+                  : 'bg-[#F4F8F5] border-[#C8DECE] border-l-[3.5px] border-l-[#3E8E63] hover:border-[#3E8E63] hover:bg-[#E8F1EC]'
               }`}
             >
-              <span className="text-[11px] font-bold text-[#3E8E63] uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[#236E46] uppercase tracking-wider flex items-center gap-1.5 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3E8E63]"></span> Low Risk
               </span>
-              <div className="text-2xl font-extrabold text-[#3E8E63] mt-1 font-mono">
+              <div
+                className={`text-xl font-extrabold mt-0.5 font-mono ${
+                  filterRisk === 'low' ? 'text-[#1E5C3A]' : 'text-[#236E46]'
+                }`}
+              >
                 {animatedLow}
               </div>
-              <span className="text-[10px] text-[#3E8E63]/90">Standard clauses</span>
+              <span className="text-[10px] text-[#2E4E3B]">Standard terms</span>
             </div>
           </div>
         </div>
 
-        {/* Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-[#DCE6E0]">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+        {/* Filter Toolbar & Search */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3.5 border-t border-[#DCE6E0]">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             {[
-              { id: 'all', label: 'All Clauses', count: stats.total },
-              { id: 'high', label: 'High Risk', count: stats.high },
-              { id: 'medium', label: 'Medium Risk', count: stats.medium },
-              { id: 'low', label: 'Low Risk', count: stats.low },
-            ].map(({ id, label, count }) => {
+              { id: 'all', label: 'All Clauses', count: stats.total, activeClass: 'border-[#12372A] bg-[#12372A] text-white' },
+              { id: 'high', label: 'High Risk', count: stats.high, activeClass: 'border-[#C94A4A] bg-[#C94A4A] text-white' },
+              { id: 'medium', label: 'Medium Risk', count: stats.medium, activeClass: 'border-[#D18A24] bg-[#D18A24] text-white' },
+              { id: 'low', label: 'Low Risk', count: stats.low, activeClass: 'border-[#3E8E63] bg-[#3E8E63] text-white' },
+            ].map(({ id, label, count, activeClass }) => {
               const isActive = filterRisk === id
-              let activeClass = 'border-[#176B4D] bg-[#E8F1EC] text-[#12372A]'
-              if (id === 'high') activeClass = 'border-[#C94A4A] bg-[#FFF2F2] text-[#C94A4A]'
-              if (id === 'medium') activeClass = 'border-[#D18A24] bg-[#FEF3E2] text-[#D18A24]'
-              if (id === 'low') activeClass = 'border-[#3E8E63] bg-[#E8F1EC] text-[#3E8E63]'
-
               return (
                 <button
                   key={id}
+                  type="button"
                   onClick={() => setFilterRisk(id)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all whitespace-nowrap ${
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-200 whitespace-nowrap cursor-pointer ${
                     isActive
-                      ? `${activeClass} shadow-2xs`
-                      : 'border-[#DCE6E0] bg-white text-[#66736C] hover:text-[#16221C] hover:bg-[#F8FAF8]'
+                      ? `${activeClass} shadow-2xs ring-1 ring-black/10`
+                      : 'border-[#DCE6E0] bg-[#F8FAF8] text-[#526058] hover:text-[#16221C] hover:bg-[#E8F1EC]'
                   }`}
                 >
                   <span>{label}</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/5 font-bold">
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-[#E8F1EC] text-[#526058]'
+                    }`}
+                  >
                     {count}
                   </span>
                 </button>
@@ -378,16 +437,20 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
           <div className="relative flex-1 sm:max-w-xs">
             <input
               type="text"
-              placeholder="Search clause text, risk issue..."
+              placeholder="Search clause provisions, topics..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-7 py-2 text-xs rounded-xl bg-white border border-[#DCE6E0] text-[#16221C] placeholder-[#8C9A92] focus:outline-none focus:border-[#176B4D] focus:ring-1 focus:ring-[#176B4D]/30 transition-all shadow-2xs"
+              className="w-full pl-8 pr-7 py-2 text-xs rounded-lg bg-[#F8FAF8] border border-[#DCE6E0] text-[#16221C] placeholder-[#526058] focus:outline-none focus:border-[#176B4D] focus:bg-white focus:ring-1 focus:ring-[#176B4D]/30 transition-all shadow-2xs"
             />
-            <span className="absolute left-2.5 top-2.5 text-[#8C9A92] text-xs">🔍</span>
+            <span className="absolute left-2.5 top-2.5 text-[#526058]">
+              <IconSearch className="w-3.5 h-3.5" />
+            </span>
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2 text-[#8C9A92] hover:text-[#16221C] text-xs"
+                aria-label="Clear search input"
+                className="absolute right-2.5 top-2 text-[#526058] hover:text-[#16221C] text-xs cursor-pointer"
               >
                 ✕
               </button>
@@ -398,93 +461,112 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
 
       {/* Clause Cards List */}
       {filteredResults.length === 0 ? (
-        <div className="p-8 rounded-2xl bg-white border border-[#DCE6E0] text-center text-[#8C9A92] space-y-2 shadow-sm">
-          <p>No clauses match your active filters.</p>
+        <div className="p-8 rounded-xl bg-white border border-[#DCE6E0] text-center text-[#526058] space-y-2 shadow-xs">
+          <p className="text-sm font-medium">No clauses match your active filters.</p>
           <button
+            type="button"
             onClick={() => {
               setFilterRisk('all')
               setSearchQuery('')
             }}
-            className="text-xs text-[#176B4D] hover:underline font-bold"
+            className="text-xs text-[#176B4D] hover:underline font-bold cursor-pointer"
           >
             Clear filters
           </button>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {filteredResults.map((result, idx) => {
             const rawText = clauseTextMap.get(result.clause_id)
             const isExpanded = expandedClauses[result.clause_id]
             const confidencePercent = Math.round((result.confidence ?? 0) * 100)
 
-            const displayClauseNum = result.clause_number
-              ? String(result.clause_number).padStart(2, '0')
-              : ''
+            // Derive clean single clause identifier without duplication
+            // If clause_number exists (e.g. "1" or "4.2"), format as "CLAUSE 1" / "CLAUSE 4.2"
+            // If cleanIdLabel exists and is not just a duplicate of "Clause X", preserve it as contextual title
+            const rawNum = result.clause_number
+              ? String(result.clause_number).trim()
+              : result.clause_id
+              ? result.clause_id.replace(/^clause_?/i, '').trim()
+              : String(idx + 1)
+
+            const formattedClauseTitle = rawNum.toLowerCase().startsWith('clause')
+              ? rawNum.toUpperCase()
+              : `CLAUSE ${rawNum}`
 
             const cleanIdLabel = result.clause_id
-              ? result.clause_id
-                  .split('_')
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ')
+              ? result.clause_id.replace(/_/g, ' ').trim()
               : ''
+
+            // Check if cleanIdLabel is redundant (e.g. "Clause 1", "Clause 01", "Clause")
+            const isRedundantId =
+              !cleanIdLabel ||
+              /^clause\s*\d*$/i.test(cleanIdLabel) ||
+              cleanIdLabel.toLowerCase() === rawNum.toLowerCase() ||
+              `clause ${cleanIdLabel}`.toLowerCase() === formattedClauseTitle.toLowerCase()
 
             const riskTheme = {
               high: {
+                cardBg: 'bg-[#FFF5F5]',
+                cardBorder: 'border-[#F5C2C2] hover:border-[#C94A4A]/50',
                 badge: 'bg-[#FFF2F2] text-[#C94A4A] border-[#F5C2C2]',
-                borderLeft: 'border-l-4 border-l-[#C94A4A]',
+                borderLeft: 'border-l-[3.5px] border-l-[#C94A4A]',
                 label: 'High Risk',
-                icon: '🚨',
+                icon: <IconAlertTriangle className="w-3.5 h-3.5 text-[#C94A4A]" />,
               },
               medium: {
+                cardBg: 'bg-[#FFF8EE]',
+                cardBorder: 'border-[#F8DEC0] hover:border-[#D18A24]/50',
                 badge: 'bg-[#FEF3E2] text-[#D18A24] border-[#F8DEC0]',
-                borderLeft: 'border-l-4 border-l-[#D18A24]',
+                borderLeft: 'border-l-[3.5px] border-l-[#D18A24]',
                 label: 'Medium Risk',
-                icon: '⚠️',
+                icon: <IconAlertCircle className="w-3.5 h-3.5 text-[#D18A24]" />,
               },
               low: {
+                cardBg: 'bg-[#F3F8F5]',
+                cardBorder: 'border-[#C8DECE] hover:border-[#3E8E63]/50',
                 badge: 'bg-[#E8F1EC] text-[#3E8E63] border-[#C8DECE]',
-                borderLeft: 'border-l-4 border-l-[#3E8E63]',
+                borderLeft: 'border-l-[3.5px] border-l-[#3E8E63]',
                 label: 'Low Risk',
-                icon: '✅',
+                icon: <IconCheckCircle className="w-3.5 h-3.5 text-[#3E8E63]" />,
               },
             }[result.risk_level] || {
-              badge: 'bg-[#F3F7F5] text-[#66736C] border-[#DCE6E0]',
-              borderLeft: 'border-l-4 border-l-[#DCE6E0]',
+              cardBg: 'bg-white',
+              cardBorder: 'border-[#D4DFD9] hover:border-[#176B4D]/40',
+              badge: 'bg-[#F3F7F5] text-[#526058] border-[#DCE6E0]',
+              borderLeft: 'border-l-[3.5px] border-l-[#DCE6E0]',
               label: result.risk_level,
-              icon: 'ℹ️',
+              icon: <IconInfo className="w-3.5 h-3.5 text-[#526058]" />,
             }
 
             return (
               <div
                 key={result.clause_id}
                 id={`clause-${result.clause_id}`}
-                className={`reveal-card group p-5 sm:p-6 rounded-2xl bg-white border border-[#DCE6E0] hover:border-[#176B4D]/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out space-y-5 ${riskTheme.borderLeft}`}
-                style={{ animationDelay: `${Math.min(idx * 40, 300)}ms` }}
+                className={`p-4 sm:p-5 rounded-xl ${riskTheme.cardBg} border ${riskTheme.cardBorder} shadow-xs hover:shadow-sm transition-all duration-200 ease-out space-y-4 ${riskTheme.borderLeft}`}
+                style={{ animationDelay: `${Math.min(idx * 30, 250)}ms` }}
               >
                 {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DCE6E0] pb-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-sm font-bold text-[#16221C] tracking-tight uppercase">
-                      {displayClauseNum ? `Clause ${displayClauseNum}` : cleanIdLabel}
+                <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#DCE6E0] pb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-white border border-[#DCE6E0] text-[#16221C] shadow-2xs">
+                      {formattedClauseTitle}
                     </span>
-                    {displayClauseNum && cleanIdLabel && (
-                      <>
-                        <span className="text-[#DCE6E0]">•</span>
-                        <span className="text-xs text-[#66736C] font-semibold">
-                          {cleanIdLabel}
-                        </span>
-                      </>
+                    {!isRedundantId && (
+                      <span className="text-sm font-bold text-[#16221C] tracking-tight">
+                        {cleanIdLabel}
+                      </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     {/* Confidence */}
-                    <span className="text-[11px] font-mono text-[#66736C] bg-[#F8FAF8] px-2.5 py-0.5 rounded-md border border-[#DCE6E0]">
+                    <span className="text-[11px] font-mono text-[#526058] bg-white px-2 py-0.5 rounded border border-[#DCE6E0] shadow-2xs">
                       {confidencePercent}% confidence
                     </span>
                     {/* Risk Badge */}
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${riskTheme.badge}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${riskTheme.badge}`}
                     >
                       <span>{riskTheme.icon}</span>
                       {riskTheme.label}
@@ -492,56 +574,65 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
                   </div>
                 </div>
 
-                {/* Original Clause Text */}
+                {/* Section 1: Original Clause Text */}
                 {rawText && (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-[#8C9A92] uppercase tracking-wider">
-                        Original Clause Text (PII Masked)
+                      <span className="text-[10px] font-bold text-[#526058] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                        <IconDocument className="w-3.5 h-3.5 text-[#526058]" />
+                        <span>Original Clause Text</span>
                       </span>
-                      {rawText.length > 300 && (
+                      {rawText.length > 280 && (
                         <button
+                          type="button"
                           onClick={() => toggleExpand(result.clause_id)}
+                          aria-expanded={Boolean(isExpanded)}
+                          aria-controls={`clause-text-${result.clause_id}`}
                           className="text-xs text-[#176B4D] hover:underline font-semibold transition-colors cursor-pointer"
                         >
                           {isExpanded ? 'Show less' : 'Show full text'}
                         </button>
                       )}
                     </div>
-                    <p
-                      className={`p-4 bg-[#F8FAF8] border border-[#DCE6E0] text-sm text-[#66736C] leading-relaxed rounded-xl font-sans italic ${
-                        rawText.length > 300 && !isExpanded ? 'line-clamp-3' : ''
-                      }`}
-                    >
-                      "{rawText}"
-                    </p>
+                    <div className="p-3.5 sm:p-4 bg-[#F8FAF8] border border-[#D2DDD6] border-l-[3px] border-l-[#72877B] rounded-lg shadow-2xs">
+                      <p
+                        id={`clause-text-${result.clause_id}`}
+                        className={`text-xs sm:text-[13px] text-[#16221C] leading-relaxed font-serif italic ${
+                          rawText.length > 280 && !isExpanded ? 'line-clamp-3' : ''
+                        }`}
+                      >
+                        &ldquo;{rawText}&rdquo;
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {/* Plain-English Legal Risk Explanation */}
+                {/* Section 2: Plain-English Legal Interpretation */}
                 <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-[#176B4D] uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🔍</span> Plain-English Analysis &amp; Exposure
+                  <span className="text-[10px] font-bold text-[#176B4D] uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                    <IconSearch className="w-3.5 h-3.5 text-[#176B4D]" />
+                    <span>Plain-English Legal Interpretation</span>
                   </span>
-                  <div className="p-4 rounded-xl bg-[#F4F8F5] border border-[#DCE6E0] text-sm text-[#16221C] leading-relaxed font-normal">
+                  <div className="p-3.5 sm:p-4 rounded-lg bg-[#F2F8F5] border border-[#C8DECE] border-l-[3px] border-l-[#176B4D] text-xs sm:text-sm text-[#16221C] leading-relaxed font-normal shadow-2xs">
                     {result.explanation}
                   </div>
                 </div>
 
-                {/* Actionable Advice / Recommendation */}
+                {/* Recommendation heading stays separate from its text; the API omits the duplicate prefix. */}
                 {result.recommendation && (
-                  <div className="p-4 rounded-xl bg-[#FFF9F2] border border-[#F8DEC0] text-sm text-[#16221C] flex items-start gap-3">
-                    <span className="text-base shrink-0 mt-0.5 text-[#D18A24]">💡</span>
-                    <div>
-                      <span className="font-bold text-[#D18A24] text-xs uppercase tracking-wider block mb-0.5">
-                        Recommendation before signing
-                      </span>
-                      <span className="text-xs sm:text-sm text-[#16221C] leading-relaxed">
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-[#D18A24] uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                      <IconLightbulb className="w-3.5 h-3.5 text-[#D18A24]" />
+                      <span>Recommendation Before Signing</span>
+                    </span>
+                    <div className="p-3.5 sm:p-4 rounded-lg bg-[#FFF8EC] border border-[#F8DEC0] border-l-[3.5px] border-l-[#D18A24] text-xs sm:text-sm text-[#16221C] flex items-start gap-2.5 shadow-2xs">
+                      <span className="text-xs sm:text-sm text-[#16221C] leading-relaxed flex-1">
                         {result.recommendation}
                       </span>
                     </div>
                   </div>
                 )}
+
               </div>
             )
           })}

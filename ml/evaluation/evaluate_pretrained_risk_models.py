@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, BertConfig
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support, confusion_matrix
 from huggingface_hub import hf_hub_download
 
@@ -18,9 +18,22 @@ if project_root not in sys.path:
 
 # Custom MultiTaskLegalModel class as defined in AnkushRaheja/Cls_Class_Risk_Scr
 class MultiTaskLegalModel(nn.Module):
-    def __init__(self, model_name, num_labels, hidden_size=768, dropout_rate=0.25):
+    def __init__(self, model_name, num_labels, hidden_size=768, dropout_rate=0.25, pretrained=True, vocab_size=30522):
         super().__init__()
-        self.bert       = AutoModel.from_pretrained(model_name)
+        if pretrained:
+            self.bert = AutoModel.from_pretrained(model_name)
+        else:
+            config = BertConfig(
+                vocab_size=vocab_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=12,
+                num_attention_heads=12,
+                intermediate_size=hidden_size * 4,
+                max_position_embeddings=512,
+                type_vocab_size=2,
+                layer_norm_eps=1e-12,
+            )
+            self.bert = AutoModel.from_config(config)
         self.dropout    = nn.Dropout(dropout_rate)
         self.classifier = nn.Sequential(
             nn.Linear(hidden_size, hidden_size // 2),

@@ -296,3 +296,52 @@ class QAInteraction(Base):
         return (
             f"<QAInteraction id={self.id!r} document_id={self.document_id!r}>"
         )
+
+
+class ClauseFeedback(Base):
+    """A consented, clause-only label awaiting explicit human review."""
+    __tablename__ = "clause_feedback"
+
+    id: str = Column(String, primary_key=True, default=_new_uuid)
+    clause_text: str = Column(Text, nullable=False)
+    predicted_risk_level: str = Column(String, nullable=False)
+    corrected_risk_level: str = Column(String, nullable=False)
+    consent: bool = Column(Boolean, nullable=False)
+    status: str = Column(String, nullable=False, default="pending", index=True)
+    review_note: str | None = Column(Text, nullable=True)
+    source_group_id: str = Column(String, nullable=False, default=_new_uuid, index=True)
+    created_at: datetime = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    reviewed_at: datetime | None = Column(DateTime(timezone=True), nullable=True)
+
+
+class ClauseFeedbackSubmission(Base):
+    """A consented document-level batch of PII-masked clauses awaiting annotation."""
+    __tablename__ = "clause_feedback_submissions"
+
+    id: str = Column(String, primary_key=True, default=_new_uuid)
+    clauses_json: str = Column(Text, nullable=False)
+    clause_count: int = Column(Integer, nullable=False)
+    consent: bool = Column(Boolean, nullable=False)
+    status: str = Column(String, nullable=False, default="pending", index=True)
+    review_note: str | None = Column(Text, nullable=True)
+    created_at: datetime = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    reviewed_at: datetime | None = Column(DateTime(timezone=True), nullable=True)
+
+
+class AdaptiveModelVersion(Base):
+    """Measured training-cycle history; metrics are recorded only after evaluation."""
+    __tablename__ = "adaptive_model_versions"
+
+    id: str = Column(String, primary_key=True, default=_new_uuid)
+    version: str = Column(String, nullable=False, unique=True, index=True)
+    parent_version: str | None = Column(String, nullable=True)
+    status: str = Column(String, nullable=False, default="running", index=True)
+    checkpoint_path: str | None = Column(String, nullable=True)
+    metrics_json: str = Column(Text, nullable=False, default="{}")
+    acceptance_json: str = Column(Text, nullable=False, default="{}")
+    approved_feedback_count: int = Column(Integer, nullable=False, default=0)
+    test_sample_count: int = Column(Integer, nullable=False, default=0)
+    display_label: str | None = Column(String, nullable=True)
+    error_message: str | None = Column(Text, nullable=True)
+    created_at: datetime = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    completed_at: datetime | None = Column(DateTime(timezone=True), nullable=True)

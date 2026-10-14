@@ -1,5 +1,11 @@
 # LexEase Database Documentation
 
+## Adaptive Learning Tables
+
+`clause_feedback` stores a single consented, PII-masked clause per submission, the original and corrected risk labels, and its pending/approved/rejected review state. It does not store a document ID or full uploaded contract. Only rows that are both approved and consented are eligible for export.
+
+`adaptive_model_versions` stores each explicit training cycle, its parent version, checkpoint location, measured baseline/candidate metrics, acceptance checks, and final state. The active model pointer is a local ignored file and changes only when the candidate passes the configured gates.
+
 ## Sprint 8 Status
 
 > [!NOTE]

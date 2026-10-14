@@ -31,7 +31,11 @@ Thumbs.db
 
 # Project specific
 .env
+*.bak
+*.db.bak
 dataset/Sample_P
+output/
+ml/adaptive/logs/
 
 # ML Models global binary ignores
 **/*.safetensors
@@ -61,6 +65,11 @@ ml/models/experiment5_model/
 ml/models/experiment6_model/6b/
 ml/models/experiment6_model/6c/
 ml/models/clause_risk_model.joblib
+ml/models/adaptive/
+ml/models/active_risk_model.json
+ml/data/adaptive/
+backend/.test-deps/
+backend/.test-deps-pinned/
 # Local SQLite databases & logs
 *.db
 *.log

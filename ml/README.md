@@ -60,6 +60,20 @@ The evaluation script [evaluate.py](file:///c:/Users/Sourish%20Bhandakkar/OneDri
    - Confusion matrix for risk levels.
    - Classification reports.
 
+## Reviewed Adaptive Learning
+
+Adaptive learning is opt-in and cycle-based. Corrections enter the backend database as pending, consented clause-only records. A reviewer must approve them before export. To run a cycle from the repository root, use:
+
+```powershell
+python -m ml.adaptive_learning.train_candidate
+```
+
+Measure the active model before collecting feedback with `python -m ml.adaptive_learning.train_candidate --evaluate-baseline`. It records the model's actual metrics on the fixed held-out set without training or promotion.
+
+The job exports approved labels under the ignored `ml/data/adaptive/` directory, checks that the approved clauses do not overlap `ml/data/real_world_validation/validation_clauses.csv`, evaluates the existing checkpoint and candidate on that same fixed set, and promotes only when all configured thresholds in `ml/config/adaptive_learning.yaml` pass. The dashboard reads measured run records from the database and shows no score until a run has measured it.
+
+The model checkpoints are stored with Git LFS. Restore them before running the job; without the local weight files, the cycle records a failure and does not promote anything. Training never runs automatically during upload or clause analysis.
+
 ## Inference Usage
 
 The prediction helper [predict.py](file:///c:/Users/Sourish%20Bhandakkar/OneDrive/Desktop/Final%20yr%20Project/ml/inference/predict.py) exposes the `predict_clause(text)` function, returning:

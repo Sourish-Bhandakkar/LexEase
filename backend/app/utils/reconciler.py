@@ -20,7 +20,7 @@ class RiskReconciler:
               - final_risk_level: "low", "medium", "high"
               - final_risk_score: float (0.0 to 100.0)
               - explanation: str (formatted in user-friendly What this means / Why it matters)
-              - recommendation: str (formatted in user-friendly Recommendation before signing)
+              - recommendation: str (recommendation text without a display heading)
               - local_ml_contribution: dict (scores/labels of local model)
               - groq_contribution: dict
         """
@@ -38,7 +38,6 @@ class RiskReconciler:
                     "This clause is flagged as high-risk because it may create severe liability or lock you into one-sided obligations."
                 )
                 rec = (
-                    "Recommendation before signing:\n"
                     "We strongly recommend renegotiating these terms or reviewing them with a legal advisor before signing."
                 )
             elif level == "medium":
@@ -49,7 +48,6 @@ class RiskReconciler:
                     "This clause is flagged as moderate-risk due to potential one-sided conditions or restrictions."
                 )
                 rec = (
-                    "Recommendation before signing:\n"
                     "Consider negotiating more balanced terms or clarifying the obligations."
                 )
             else:
@@ -60,7 +58,6 @@ class RiskReconciler:
                     "This clause appears reasonable and standard for agreements of this type."
                 )
                 rec = (
-                    "Recommendation before signing:\n"
                     "You can generally accept this clause as written."
                 )
             return exp, rec
@@ -173,7 +170,7 @@ class RiskReconciler:
 
         # Re-assemble formatted strings
         final_explanation = f"What this means:\n{wtm}\n\nWhy it matters:\n{wim}"
-        final_rec = f"Recommendation before signing:\n{rec_val}"
+        final_rec = rec_val
         
         return {
             "final_risk_level": final_level,

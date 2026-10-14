@@ -6,27 +6,59 @@ services:
     container_name: lexease-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: lexease
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment secret must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-lexease}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: lexease-backend
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
+      - AI_PROVIDER=${AI_PROVIDER:-groq}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL:-openai/gpt-oss-120b}
+      - GROQ_TIMEOUT=${GROQ_TIMEOUT:-30}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter/free}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/lexease
-      - ALLOWED_ORIGINS=http://localhost:5173
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment secret must be set}@db:5432/${POSTGRES_DB:-lexease}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      - ALLOWED_ORIGIN_REGEX=${ALLOWED_ORIGIN_REGEX:-}
       - PORT=8000
+      - ADAPTIVE_LEARNING_ADMIN_TOKEN=${ADAPTIVE_LEARNING_ADMIN_TOKEN}
+      - LEXEASE_MODEL_REPO_ID=${LEXEASE_MODEL_REPO_ID:-}
+      - LEXEASE_MODEL_REVISION=${LEXEASE_MODEL_REVISION:-main}
+      - HF_TOKEN=${HF_TOKEN:-}
+    volumes:
+      - ml_models:/app/ml/models
+      - ml_adaptive_data:/app/ml/data/adaptive
+    depends_on:
+      - db
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: lexease-worker
+    restart: unless-stopped
+    command: ["python", "-m", "ml.adaptive_learning.worker"]
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment secret must be set}@db:5432/${POSTGRES_DB:-lexease}
+      - LEXEASE_MODEL_REPO_ID=${LEXEASE_MODEL_REPO_ID:-}
+      - LEXEASE_MODEL_REVISION=${LEXEASE_MODEL_REVISION:-main}
+      - HF_TOKEN=${HF_TOKEN:-}
+    volumes:
+      - ml_models:/app/ml/models
+      - ml_adaptive_data:/app/ml/data/adaptive
     depends_on:
       - db
 
@@ -34,14 +66,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
     container_name: lexease-frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_BACKEND_URL=http://localhost:8000
+      - "5173:80"
     depends_on:
       - backend
 
 volumes:
   postgres_data:
+  ml_models:
+  ml_adaptive_data:

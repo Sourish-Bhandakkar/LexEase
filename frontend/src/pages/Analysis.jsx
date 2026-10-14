@@ -363,7 +363,7 @@ function Analysis() {
                           </blockquote>
                         </div>
 
-                        {/* Simplified explanation & Recommendation */}
+                        {/* Simplified explanation & recommendation */}
                         <div className="space-y-3 flex flex-col justify-between">
                           {analysis ? (
                             <>
@@ -386,6 +386,7 @@ function Analysis() {
                                   </p>
                                 </div>
                               )}
+
                             </>
                           ) : (
                             <div className="text-xs text-[#94A3B8] italic p-3">
@@ -515,6 +516,7 @@ function Analysis() {
                                 <span className="text-[#94A3B8]">{risk.recommendation}</span>
                               </div>
                             )}
+
                           </div>
                         )
                       })}

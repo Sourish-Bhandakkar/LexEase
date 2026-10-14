@@ -1,9 +1,37 @@
 import os
+from pathlib import Path
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Load environment variables from backend/.env (CWD when uvicorn runs from backend/)
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+
+# Load environment variables from backend/.env regardless of current working directory
+load_dotenv(BACKEND_DIR / ".env")
 load_dotenv()
+
+
+def resolve_database_url(url: str | None = None) -> str:
+    raw_url = url or os.getenv("DATABASE_URL", "sqlite:///./lexease.db")
+    if raw_url.startswith("sqlite:///"):
+        db_path = raw_url[len("sqlite:///"):]
+        p = Path(db_path)
+        if not p.is_absolute():
+            if db_path.startswith("./"):
+                db_path = db_path[2:]
+            p = (BACKEND_DIR / db_path).resolve()
+        return f"sqlite:///{p.as_posix()}"
+
+    if raw_url.startswith(("postgresql://", "postgres://", "postgresql+psycopg2://")):
+        import re
+        match = re.search(r"://([^:@]+)(?::([^@]*))?@", raw_url)
+        if match:
+            pwd = match.group(2)
+            if pwd is None or pwd.strip() == "":
+                raise ValueError(
+                    "DATABASE_URL contains PostgreSQL connection without a password. "
+                    "A secure server-side POSTGRES_PASSWORD is required."
+                )
+    return raw_url
 
 class Settings(BaseModel):
     PROJECT_NAME: str = "LexEase API"
@@ -13,9 +41,15 @@ class Settings(BaseModel):
     
     ALLOWED_ORIGINS: list[str] = [
         origin.strip()
-        for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+        for origin in os.getenv(
+            "ALLOWED_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000,http://localhost:4173,http://127.0.0.1:4173",
+        ).split(",")
         if origin.strip()
     ]
+    ALLOWED_ORIGIN_REGEX: str | None = (
+        os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or None
+    )
     
     # Active AI Provider: "gemini", "groq", "openrouter", "cerebras"
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini").lower()
@@ -39,8 +73,9 @@ class Settings(BaseModel):
     
     # General AI Configuration
     MAX_RETRIES: int = int(os.getenv("MAX_RETRIES", "3"))
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./lexease.db")
+    DATABASE_URL: str = resolve_database_url()
     PORT: int = int(os.getenv("PORT", "8000"))
+    ADAPTIVE_LEARNING_ADMIN_TOKEN: str | None = os.getenv("ADAPTIVE_LEARNING_ADMIN_TOKEN")
 
     # Cerebras AI Provider Configuration
     CEREBRAS_API_KEY: str | None = os.getenv("CEREBRAS_API_KEY")

@@ -115,6 +115,22 @@ class ClauseAnalysisService:
             except Exception as e:
                 logger.error(f"Local ML pipeline initialization failed ({e}). Proceeding with Groq fallback routing.", exc_info=True)
 
+    @classmethod
+    def reload_models(cls):
+        """Forces reloading of the local ML risk engine checkpoint."""
+        cls._init_models()
+        if cls._risk_engine is not None:
+            cls._risk_engine.reload()
+            logger.info(f"Reloaded LegalRiskEngine (active_version: {cls.get_active_loaded_version()}).")
+
+    @classmethod
+    def get_active_loaded_version(cls) -> str | None:
+        """Returns the active model version currently loaded in memory, if initialized."""
+        if cls._risk_engine is not None:
+            cls._risk_engine.reload_if_updated()
+            return getattr(cls._risk_engine, "active_version", None)
+        return None
+
     def __init__(
         self,
         ai_service: AIService | None = None,

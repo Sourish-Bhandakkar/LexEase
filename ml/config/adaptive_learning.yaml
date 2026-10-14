@@ -1,0 +1,30 @@
+dataset:
+  # Temporary demonstration gate; this small sample is not evidence of reliable improvement.
+  minimum_approved_feedback: 15
+  minimum_per_class: 5
+  minimum_validation_samples: 30
+  minimum_test_samples: 30
+  validation_set: ml/data/real_world_validation/validation_clauses.csv
+  locked_test_set: ml/data/splits/test.csv
+  export_dir: ml/data/adaptive
+training:
+  epochs: 3
+  batch_size: 8
+  learning_rate: 0.0001
+  max_length: 256
+  seed: 42
+acceptance:
+  # Primary metric improvement: Candidate must improve accuracy or macro_f1
+  # by at least this minimum absolute amount over its active parent.
+  min_improvement: 0.005
+  min_accuracy_improvement: 0.005
+  min_macro_f1_improvement: 0.005
+  # Non-regression tolerances for protected metrics
+  max_regression_tolerance: 0.0
+  maximum_high_risk_recall_drop: 0.0
+  # Safety floor for high-risk recall
+  safety_floor_high_risk_recall: 0.80
+  # Backward-compatible aliases
+  minimum_accuracy_delta: 0.005
+  minimum_macro_f1_delta: 0.005
+  minimum_high_risk_recall: 0.80

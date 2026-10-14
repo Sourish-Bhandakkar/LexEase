@@ -1,7 +1,7 @@
 # LexEase Backend API Documentation
 
-**Version:** 0.1.0  
-**Backend Framework:** FastAPI  
+**Version:** 0.1.0
+**Backend Framework:** FastAPI
 **Base URL (Development):**
 ```
 http://localhost:8000
@@ -315,6 +315,21 @@ Current modules:
 - `ResponseParser` (JSON stripping and Pydantic model validation)
 
 These modules are consumed by `/documents/summarize`, `/clauses/analyze`, and `/documents/ask`.
+
+---
+
+# Adaptive Learning
+
+Clause corrections are optional and require explicit consent. `POST /adaptive-learning/feedback` accepts only one PII-masked clause, the model's risk label, the suggested risk label, and `consent: true`. It does not accept or store a full document. New feedback is pending and is never used as training data automatically.
+
+`GET /adaptive-learning/dashboard` returns the active version, measured metrics when a fixed-test run exists, pending count, and recent cycle history. Missing measurements are returned as `null` rather than estimated.
+
+Review routes require the `X-Adaptive-Admin-Token` header, configured with `ADAPTIVE_LEARNING_ADMIN_TOKEN`:
+
+- `GET /adaptive-learning/feedback/pending`
+- `POST /adaptive-learning/feedback/{feedback_id}/review` with `{ "decision": "approve" }` or `{ "decision": "reject" }`
+
+Run `python -m ml.adaptive_learning.train_candidate --evaluate-baseline` from the repository root to measure the active checkpoint without training. Only approved, consented clauses are exported for a manually launched candidate cycle. Run `python -m ml.adaptive_learning.train_candidate` to evaluate baseline and candidate on the same fixed held-out set, record accuracy, macro F1, and high-risk recall, and update the active checkpoint only if all thresholds in `ml/config/adaptive_learning.yaml` pass. Candidate checkpoints, exported clause data, and the active-model pointer are local ignored files.
 
 ---
 
@@ -717,4 +732,20 @@ Current Result
 |Sprint 5 – Whole Document Summarization|Completed|
 |Sprint 6 – Clause Risk Analysis|Completed|
 |Sprint 7 – Grounded Document Q&A|Completed|
-|Sprint 8 – Multi-Provider AI Architecture (Groq + OpenRouter + Factory)|Completed|
+|Sprint 8 – Multi-Provider AI Architecture (Groq + OpenRouter + Factory)|Completed|
+
+---
+
+# Clause Drafting
+
+`POST /clauses/rewrite` drafts alternatives for 1–8 explicitly selected clauses and requires `ai_processing_consent` to be `true`. The drafting perspective is always customer/service-recipient. Only selected clause text is sent to the configured AI provider.
+
+`POST /documents/proposed-pdf` accepts the original PDF as multipart upload plus the extracted clauses and user-approved revisions. It reproduces the original PDF pages unchanged and appends an addendum with original and proposed wording, preserving the source layout instead of rebuilding the contract from extracted text. The uploaded PDF is processed in memory and is not persisted by this endpoint.
+
+The legacy `POST /documents/proposed-draft` endpoint still returns a reconstructed `.docx` for existing clients; it does not preserve the source PDF design. The frontend uses the PDF addendum endpoint.
+
+# Batch Model-Improvement Contributions
+
+`POST /adaptive-learning/feedback/submissions` accepts one consented batch containing analyzed clause text, current predicted risk labels, and confidence values. The backend applies PII masking and stores only those clause-level fields; it does not store the filename or original document. Submissions remain pending and are not treated as ground truth.
+
+Administrators can load pending batches with `GET /adaptive-learning/feedback/submissions/pending` and, using the `X-Adaptive-Admin-Token` header, submit verified labels through `POST /adaptive-learning/feedback/submissions/{submission_id}/review`. Only explicitly annotated clauses become approved training rows. Training remains a separate periodic command and candidate checkpoints must still pass the configured held-out evaluation before promotion.

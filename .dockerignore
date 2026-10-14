@@ -1,0 +1,44 @@
+# Virtual environments
+.venv/
+backend/.venv/
+ml/.venv/
+venv/
+env/
+
+# Node dependencies and build artifacts
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Environment configurations with real secrets
+.env
+.env.*
+!.env.example
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Test suites and development scratch files
+backend/tests/
+scripts/
+output/
+tmp/
+.agent/
+
+# Local database files and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Git and IDE metadata
+.git
+.gitignore
+.gitattributes
+.vscode/
+.idea/

@@ -46,7 +46,10 @@ def _build_engine():
     """
     url: str = settings.DATABASE_URL
     if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql://", 1)
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 
     connect_args: dict = {}
     if url.startswith("sqlite"):

@@ -129,6 +129,9 @@ def test_prompt_builder_clause_analysis():
     assert "recommendation" in prompt
     assert "confidence" in prompt
     assert "clause_1" in prompt
+    assert "from the perspective of the individual customer" in prompt
+    assert "do not assess the contract from the provider" in prompt
+    assert "Do not assume Indian law when the contract states another jurisdiction" in prompt
 
 
 # ---------------------------------------------------------------------------

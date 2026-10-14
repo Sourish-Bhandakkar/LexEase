@@ -106,6 +106,109 @@ body,
   animation: entranceSerif 650ms cubic-bezier(0.16, 1, 0.3, 1) 300ms forwards;
 }
 
+/* Hero Headline Transformation: Single Horizontal Editorial Cut
+   LEGAL JARGON ──────────────→ PLAIN ENGLISH */
+
+/* The single horizontal 2px brand green cutting line (preserved exactly: 700ms) */
+@keyframes heroCutLine {
+  0% {
+    width: 0%;
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+.animate-hero-cut-line {
+  animation: heroCutLine 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: width;
+}
+
+/* Gentle fade-out of cutting line upon completing stroke as plain-English text is revealed */
+@keyframes heroLineFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-hero-line-fade {
+  animation: heroLineFadeOut 300ms ease-out forwards;
+  will-change: opacity;
+}
+
+/* Legal phrase smoothly dissolves immediately after line completes */
+@keyframes heroLegalFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-hero-legal-fade-out {
+  animation: heroLegalFadeOut 400ms ease-out forwards;
+  will-change: opacity;
+}
+
+/* Smooth, premium editorial fade-in of "easier to understand." (850ms, subtle 5px upward glide, no snap) */
+@keyframes heroPlainFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hero-plain-fade-in {
+  animation: heroPlainFadeIn 1000ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* Smooth dissolve of "easier to understand." after 6–7s hold */
+@keyframes heroPlainFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-hero-plain-fade-out {
+  animation: heroPlainFadeOut 350ms ease-out forwards;
+  will-change: opacity;
+}
+
+/* Fade-in for next legal phrase in the cycle */
+@keyframes heroLegalFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-hero-legal-fade-in {
+  animation: heroLegalFadeIn 350ms ease-in forwards;
+  will-change: opacity;
+}
+
 /* Step 5: Description (delay ~100ms, duration ~500ms, ~12px upward, opacity 0 -> 1) */
 @keyframes entranceDesc {
   from {
@@ -238,32 +341,35 @@ body,
   animation: docPanelEntrance 500ms cubic-bezier(0.16, 1, 0.3, 1) 850ms forwards;
 }
 
-/* 5. Floating Badges Settle In */
-@keyframes badgeSettleIn {
+/* 5. Floating Badges Staged Reveal & Floating */
+@keyframes badgeEntrance {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-.animate-badge-settle-1 {
+
+.animate-badge-entrance-1 {
   opacity: 0;
-  animation: badgeSettleIn 450ms cubic-bezier(0.16, 1, 0.3, 1) 1050ms forwards, gentleFloat 4.2s ease-in-out 1500ms infinite;
-}
-.animate-badge-settle-2 {
-  opacity: 0;
-  animation: badgeSettleIn 450ms cubic-bezier(0.16, 1, 0.3, 1) 1150ms forwards, gentleFloat 4.8s ease-in-out 1600ms infinite;
-}
-.animate-badge-settle-3 {
-  opacity: 0;
-  animation: badgeSettleIn 450ms cubic-bezier(0.16, 1, 0.3, 1) 1250ms forwards, gentleFloat 5.2s ease-in-out 1700ms infinite;
+  animation: badgeEntrance 600ms cubic-bezier(0.16, 1, 0.3, 1) 350ms forwards;
 }
 
-/* Gentle Floating animation for document preview badges */
-@keyframes gentleFloat {
+.animate-badge-entrance-2 {
+  opacity: 0;
+  animation: badgeEntrance 600ms cubic-bezier(0.16, 1, 0.3, 1) 500ms forwards;
+}
+
+.animate-badge-entrance-3 {
+  opacity: 0;
+  animation: badgeEntrance 600ms cubic-bezier(0.16, 1, 0.3, 1) 650ms forwards;
+}
+
+/* Floating Animation Keyframes (4–7px vertical movement, non-synchronized cycles) */
+@keyframes badgeFloat1 {
   0%, 100% {
     transform: translateY(0px);
   }
@@ -272,16 +378,66 @@ body,
   }
 }
 
+@keyframes badgeFloat2 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes badgeFloat3 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-badge-float-1 {
+  animation: badgeFloat1 4.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-badge-float-2 {
+  animation: badgeFloat2 5.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-badge-float-3 {
+  animation: badgeFloat3 4.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-badge-float-1:hover,
+.animate-badge-float-2:hover,
+.animate-badge-float-3:hover {
+  animation-play-state: paused;
+}
+
+/* Backward compatibility aliases */
+.animate-badge-settle-1 {
+  opacity: 0;
+  animation: badgeEntrance 600ms cubic-bezier(0.16, 1, 0.3, 1) 350ms forwards, badgeFloat1 4.5s ease-in-out 950ms infinite;
+}
+.animate-badge-settle-2 {
+  opacity: 0;
+  animation: badgeEntrance 600ms cubic-bezier(0.16, 1, 0.3, 1) 500ms forwards, badgeFloat2 5.2s ease-in-out 1100ms infinite;
+}
+.animate-badge-settle-3 {
+  opacity: 0;
+  animation: badgeEntrance 600ms cubic-bezier(0.16, 1, 0.3, 1) 650ms forwards, badgeFloat3 4.8s ease-in-out 1250ms infinite;
+}
 .animate-float-1 {
-  animation: gentleFloat 4.2s ease-in-out infinite;
+  animation: badgeFloat1 4.5s ease-in-out infinite;
 }
-
 .animate-float-2 {
-  animation: gentleFloat 4.8s ease-in-out 1.2s infinite;
+  animation: badgeFloat2 5.2s ease-in-out infinite;
 }
-
 .animate-float-3 {
-  animation: gentleFloat 5.2s ease-in-out 2.2s infinite;
+  animation: badgeFloat3 4.8s ease-in-out infinite;
 }
 
 /* Subtle micro-transition when risk threshold is crossed */
@@ -361,6 +517,12 @@ body,
   .animate-doc-header,
   .animate-doc-clause,
   .animate-doc-panel,
+  .animate-badge-entrance-1,
+  .animate-badge-entrance-2,
+  .animate-badge-entrance-3,
+  .animate-badge-float-1,
+  .animate-badge-float-2,
+  .animate-badge-float-3,
   .animate-badge-settle-1,
   .animate-badge-settle-2,
   .animate-badge-settle-3,
@@ -369,10 +531,19 @@ body,
   .animate-float-3,
   .animate-entrance-step-1,
   .animate-entrance-step-2,
-  .animate-entrance-step-3 {
+  .animate-hero-cut-line,
+  .animate-hero-line-fade,
+  .animate-hero-legal-fade-out,
+  .animate-hero-plain-fade-in,
+  .animate-hero-plain-fade-out,
+  .animate-hero-legal-fade-in,
+  .animate-hero-resolve,
+  .animate-hero-cycle-out,
+  .animate-hero-cycle-in {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+    clip-path: none !important;
   }
 }
 

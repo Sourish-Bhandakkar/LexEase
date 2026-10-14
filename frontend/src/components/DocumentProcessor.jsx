@@ -1,4 +1,5 @@
 import React from 'react'
+import { IconCheck, IconAlertTriangle } from './Icons'
 
 function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
   // Map internal stages into the 3 visual pipeline steps
@@ -123,7 +124,7 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                 ? 'Agreement Verified & Ready'
                 : 'Reviewing your agreement'}
             </h2>
-            <p className="text-xs sm:text-sm text-[#66736C] max-w-xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#526058] max-w-xl leading-relaxed">
               {stage === 'error'
                 ? 'Document processing could not be completed.'
                 : stage === 'ready'
@@ -157,7 +158,7 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                 >
                   {file.name}
                 </span>
-                <span className="text-xs text-[#66736C] block mt-0.5 font-mono">
+                <span className="text-xs text-[#526058] block mt-0.5 font-mono">
                   PDF Agreement &bull; {formatFileSize(file.size)}
                 </span>
               </div>
@@ -185,14 +186,14 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                         ? 'text-[#176B4D] font-bold'
                         : step1Status === 'completed'
                         ? 'text-[#12372A]'
-                        : 'text-[#8C9A92]'
+                        : 'text-[#526058]'
                     }`}
                   >
                     Reading
                   </span>
                   {step1Status === 'completed' ? (
-                    <span className="w-5 h-5 rounded-full bg-[#E8F1EC] text-[#176B4D] border border-[#DCE6E0] flex items-center justify-center text-xs font-bold">
-                      ✓
+                    <span className="w-5 h-5 rounded-full bg-[#E8F1EC] text-[#176B4D] border border-[#DCE6E0] flex items-center justify-center">
+                      <IconCheck className="w-3 h-3 text-[#176B4D]" />
                     </span>
                   ) : step1Status === 'active' ? (
                     <span className="relative flex h-5 w-5 items-center justify-center">
@@ -212,14 +213,14 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                         ? 'text-[#176B4D] font-bold'
                         : step2Status === 'completed'
                         ? 'text-[#12372A]'
-                        : 'text-[#8C9A92]'
+                        : 'text-[#526058]'
                     }`}
                   >
                     Analyzing
                   </span>
                   {step2Status === 'completed' ? (
-                    <span className="w-5 h-5 rounded-full bg-[#E8F1EC] text-[#176B4D] border border-[#DCE6E0] flex items-center justify-center text-xs font-bold">
-                      ✓
+                    <span className="w-5 h-5 rounded-full bg-[#E8F1EC] text-[#176B4D] border border-[#DCE6E0] flex items-center justify-center">
+                      <IconCheck className="w-3 h-3 text-[#176B4D]" />
                     </span>
                   ) : step2Status === 'active' ? (
                     <span className="relative flex h-5 w-5 items-center justify-center">
@@ -239,14 +240,14 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                         ? 'text-[#176B4D] font-bold'
                         : step3Status === 'completed'
                         ? 'text-[#12372A]'
-                        : 'text-[#8C9A92]'
+                        : 'text-[#526058]'
                     }`}
                   >
                     Preparing
                   </span>
                   {step3Status === 'completed' ? (
-                    <span className="w-5 h-5 rounded-full bg-[#E8F1EC] text-[#176B4D] border border-[#DCE6E0] flex items-center justify-center text-xs font-bold">
-                      ✓
+                    <span className="w-5 h-5 rounded-full bg-[#E8F1EC] text-[#176B4D] border border-[#DCE6E0] flex items-center justify-center">
+                      <IconCheck className="w-3 h-3 text-[#176B4D]" />
                     </span>
                   ) : step3Status === 'active' ? (
                     <span className="relative flex h-5 w-5 items-center justify-center">
@@ -265,12 +266,12 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
           {stage === 'error' && (
             <div className="p-4 rounded-xl bg-[#FFF2F2] border border-[#F5C2C2] text-left space-y-3">
               <div className="flex items-start gap-2.5">
-                <span className="text-base text-[#C94A4A] shrink-0 mt-0.5">⚠️</span>
+                <IconAlertTriangle className="w-5 h-5 text-[#C94A4A] shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <h4 className="text-xs sm:text-sm font-bold text-[#C94A4A]">
                     Processing Failed
                   </h4>
-                  <p className="text-xs text-[#66736C] mt-1 break-words leading-relaxed">
+                  <p className="text-xs text-[#526058] mt-1 break-words leading-relaxed">
                     {error}
                   </p>
                 </div>
@@ -286,7 +287,7 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-[#F3F7F5] border border-[#DCE6E0] text-[#66736C] hover:text-[#16221C] transition-all cursor-pointer"
+                  className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-[#F3F7F5] border border-[#DCE6E0] text-[#526058] hover:text-[#16221C] transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -320,7 +321,7 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                 <div key={idx} className="flex items-center gap-3">
                   <div className="w-4 h-4 flex items-center justify-center shrink-0">
                     {status === 'completed' ? (
-                      <span className="text-xs font-bold text-[#176B4D]">✓</span>
+                      <IconCheck className="w-3.5 h-3.5 text-[#176B4D]" />
                     ) : status === 'active' ? (
                       <span className="relative flex h-3 w-3 items-center justify-center">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#176B4D]/40 opacity-75" />
@@ -336,7 +337,7 @@ function DocumentProcessor({ file, stage, error, onRetry, onCancel }) {
                         ? 'font-bold text-[#12372A]'
                         : status === 'completed'
                         ? 'text-[#16221C] font-medium'
-                        : 'text-[#8C9A92]'
+                        : 'text-[#526058]'
                     }`}
                   >
                     {label}

@@ -4,7 +4,7 @@ LexEase is a web application designed to help ordinary Indian citizens understan
 
 ## Project Structure
 
-*   `/backend` - FastAPI backend application using Python 3.11, `uv` package manager, Multi-Provider AI Foundation Layer (Groq, OpenRouter, Gemini), and structured JSON parsing.
+*   `/backend` - FastAPI backend application using Python 3.11, `uv` package manager, multi-provider AI layer (Groq, OpenRouter, Gemini), and structured JSON parsing.
 *   `/frontend` - React SPA frontend built with Vite, TailwindCSS, React Router, and Axios.
 *   `/docs` - Comprehensive API, Architecture, Testing, and Deployment documentation.
 *   `docker-compose.yml` - Multi-container setup for local development.
