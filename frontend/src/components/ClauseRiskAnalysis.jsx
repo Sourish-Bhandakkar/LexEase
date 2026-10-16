@@ -8,6 +8,159 @@ import {
   IconLightbulb,
   IconDocument,
 } from './Icons'
+import { submitClauseFeedback, getErrorMessage } from '../api/client'
+
+function ClauseFeedbackInline({ clauseText, predictedRisk, clauseId, onClose }) {
+  const [correctedRisk, setCorrectedRisk] = useState(
+    predictedRisk === 'high' ? 'medium' : predictedRisk === 'medium' ? 'low' : 'medium'
+  )
+  const [explanation, setExplanation] = useState('')
+  const [consent, setConsent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!consent) {
+      setErrorMsg('Please give consent to store the clause text for review.')
+      return
+    }
+    if (!clauseText || clauseText.trim().length < 5) {
+      setErrorMsg('Clause text is too short to submit for review.')
+      return
+    }
+    setSubmitting(true)
+    setErrorMsg('')
+    try {
+      await submitClauseFeedback({
+        clause_text: clauseText.trim(),
+        predicted_risk_level: predictedRisk.toLowerCase(),
+        corrected_risk_level: correctedRisk.toLowerCase(),
+        consent: true,
+        explanation: explanation.trim() || undefined,
+        source_group_id: clauseId ? `clause-${clauseId}` : undefined,
+      })
+      setSubmitted(true)
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="p-3.5 bg-[#E8F5E9] border border-[#A5D6A7] rounded-lg text-xs text-[#1B5E20] space-y-1">
+        <p className="font-semibold">Feedback submitted for review!</p>
+        <p>
+          This clause has been queued for human reviewer evaluation and will be retained as a reviewed example for future offline analysis. The active model is not changed.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-1 text-xs text-[#2E7D32] underline hover:no-underline font-medium cursor-pointer"
+        >
+          Close
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="p-3.5 bg-white border border-[#DCE6E0] rounded-lg text-xs space-y-3 shadow-2xs">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-[#12372A]">Suggest Risk Label Correction</span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-[#66736C] hover:text-[#16221C] text-xs cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
+      <p className="text-[11px] text-[#66736C]">
+        Submissions are reviewed by human reviewers before being added to a dataset of reviewed examples for future evaluation. Approval does not retrain or modify the live model.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#526058] mb-1">
+            Current Predicted Risk
+          </label>
+          <div className="px-2.5 py-1.5 bg-[#F8FAF8] border border-[#DCE6E0] rounded text-xs font-medium capitalize text-[#526058]">
+            {predictedRisk}
+          </div>
+        </div>
+        <div>
+          <label htmlFor={`suggested-risk-${clauseId}`} className="block text-[10px] font-bold uppercase tracking-wider text-[#526058] mb-1">
+            Suggested Risk Label
+          </label>
+          <select
+            id={`suggested-risk-${clauseId}`}
+            value={correctedRisk}
+            onChange={(e) => setCorrectedRisk(e.target.value)}
+            className="w-full px-2.5 py-1.5 bg-white border border-[#DCE6E0] rounded text-xs focus:ring-1 focus:ring-[#176B4D] focus:border-[#176B4D]"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor={`explanation-${clauseId}`} className="block text-[10px] font-bold uppercase tracking-wider text-[#526058] mb-1">
+          Explanation / Reason (optional)
+        </label>
+        <textarea
+          id={`explanation-${clauseId}`}
+          rows={2}
+          value={explanation}
+          onChange={(e) => setExplanation(e.target.value)}
+          placeholder="Why should this clause have a different risk level?"
+          className="w-full p-2 bg-white border border-[#DCE6E0] rounded text-xs focus:ring-1 focus:ring-[#176B4D] focus:border-[#176B4D]"
+          maxLength={1000}
+        />
+      </div>
+
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-0.5 rounded border-[#DCE6E0] text-[#176B4D] focus:ring-[#176B4D]"
+        />
+        <span className="text-[11px] text-[#526058] leading-tight">
+          I agree that this clause text and suggested label may be stored and reviewed for dataset collection.
+        </span>
+      </label>
+
+      {errorMsg && (
+        <div className="p-2 bg-[#FFF2F2] border border-[#F5C2C2] text-[#C94A4A] rounded text-[11px]">
+          {errorMsg}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        <button
+          type="submit"
+          disabled={submitting || !consent}
+          className="px-3 py-1.5 bg-[#176B4D] hover:bg-[#12543C] disabled:opacity-50 text-white rounded text-xs font-semibold cursor-pointer shadow-2xs"
+        >
+          {submitting ? 'Submitting...' : 'Submit for Review'}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-3 py-1.5 bg-white border border-[#DCE6E0] text-[#526058] hover:bg-[#F8FAF8] rounded text-xs cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+}
 
 // Lightweight Animated Counter Hook for smooth metrics count-up (0 -> target)
 function useCountUp(target, duration = 850) {
@@ -65,6 +218,7 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
   const [filterRisk, setFilterRisk] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedClauses, setExpandedClauses] = useState({})
+  const [flaggingClauseId, setFlaggingClauseId] = useState(null)
   // Map original clause text by clause_id for rapid lookup
   const clauseTextMap = useMemo(() => {
     const map = new Map()
@@ -571,8 +725,28 @@ function ClauseRiskAnalysis({ analysisData, originalClauses = [], isLoading, err
                       <span>{riskTheme.icon}</span>
                       {riskTheme.label}
                     </span>
+                    {/* Flag Label Button */}
+                    <button
+                      type="button"
+                      onClick={() => setFlaggingClauseId(flaggingClauseId === result.clause_id ? null : result.clause_id)}
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-medium text-[#526058] hover:text-[#176B4D] bg-white hover:bg-[#F2F8F5] border border-[#DCE6E0] shadow-2xs transition-colors cursor-pointer"
+                      title="Flag risk label or suggest a correction for this clause"
+                    >
+                      <span>🚩</span>
+                      <span>{flaggingClauseId === result.clause_id ? 'Cancel' : 'Flag label'}</span>
+                    </button>
                   </div>
                 </div>
+
+                {/* Inline Feedback / Suggestion Form */}
+                {flaggingClauseId === result.clause_id && (
+                  <ClauseFeedbackInline
+                    clauseText={rawText}
+                    predictedRisk={result.risk_level}
+                    clauseId={result.clause_id}
+                    onClose={() => setFlaggingClauseId(null)}
+                  />
+                )}
 
                 {/* Section 1: Original Clause Text */}
                 {rawText && (

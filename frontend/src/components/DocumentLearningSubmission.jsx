@@ -30,7 +30,7 @@ function DocumentLearningSubmission({ clauses = [], analysisData, onDraftSafer }
     setMessage('')
     try {
       const response = await submitClauseFeedbackBatch({ clauses: submissionClauses, consent: true })
-      setMessage(`Thanks. ${response.clause_count} clauses were added to LexEase's improvement queue. You do not need to label them.`)
+      setMessage(`Thanks. ${response.clause_count} clauses were submitted for reviewer evaluation. They are retained as candidate examples for offline analysis.`)
       setConsent(false)
     } catch (submitError) {
       setError(getErrorMessage(submitError))
@@ -55,14 +55,14 @@ function DocumentLearningSubmission({ clauses = [], analysisData, onDraftSafer }
       <form onSubmit={submitForImprovement} className="space-y-3 rounded-2xl border border-[#D6E1D9] bg-white p-5 shadow-sm sm:p-6">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#176B4D]">Optional contribution</p>
-          <h2 className="mt-1 text-lg font-bold text-[#16221C]">Help improve LexEase</h2>
-          <p className="mt-1 text-sm leading-relaxed text-[#526058]">Send all analyzed clauses and their current risk predictions together. You do not need to label them one by one.</p>
+          <h2 className="mt-1 text-lg font-bold text-[#16221C]">Contribute to Reviewed Dataset</h2>
+          <p className="mt-1 text-sm leading-relaxed text-[#526058]">Send all analyzed clauses and their current risk predictions together for human reviewer inspection.</p>
         </div>
         <label className="flex items-start gap-2 text-xs leading-relaxed text-[#526058]">
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-0.5 accent-[#176B4D]" />
-          I consent to sharing these clause texts and risk predictions with LexEase for model-improvement review. The filename and uploaded PDF are not included.
+          I consent to sharing these clause texts and risk predictions with LexEase for reviewer evaluation and dataset collection. The filename and uploaded PDF are not included.
         </label>
-        <p className="text-xs leading-relaxed text-[#66736C]">The clauses are PII-masked and queued together. They are not treated as verified labels or used to train the model automatically; verified labels can be included in a later training cycle.</p>
+        <p className="text-xs leading-relaxed text-[#66736C]">The clauses are PII-masked and queued together. They are not treated as verified labels or used to train the model automatically; verified labels are retained as reviewed examples for future offline analysis.</p>
         <button type="submit" disabled={!consent || !submissionClauses.length || sending} className="rounded-lg border border-[#D6E1D9] bg-[#F3F7F5] px-4 py-2.5 text-sm font-bold text-[#176B4D] transition hover:bg-[#E8F1EC] disabled:cursor-not-allowed disabled:opacity-50">
           {sending ? 'Submitting clauses…' : `Submit ${submissionClauses.length} clauses together`}
         </button>

@@ -15,7 +15,7 @@ import logging
 from sqlalchemy import inspect, text
 
 from app.database.models import Base
-from app.database.session import engine
+from app.database import session as session_module
 
 logger = logging.getLogger(__name__)
 
@@ -32,23 +32,25 @@ def init_db() -> None:
     ``upgrade("head")`` call.
     """
     try:
-        Base.metadata.create_all(bind=engine)
-        _migrate_clause_feedback_source_group()
-        _migrate_adaptive_model_versions_display_label()
+        active_engine = session_module.engine
+        Base.metadata.create_all(bind=active_engine)
+        _migrate_clause_feedback_source_group(active_engine)
+        _migrate_adaptive_model_versions_display_label(active_engine)
         logger.info("Database tables initialized successfully.")
     except Exception as exc:
         logger.error(f"Database initialization failed: {exc}")
         raise
 
 
-def _migrate_clause_feedback_source_group() -> None:
+def _migrate_clause_feedback_source_group(active_engine=None) -> None:
     """Add the adaptive-learning grouping column to databases created earlier."""
-    inspector = inspect(engine)
+    target_engine = active_engine or session_module.engine
+    inspector = inspect(target_engine)
     if not inspector.has_table("clause_feedback"):
         return
 
     columns = {column["name"] for column in inspector.get_columns("clause_feedback")}
-    with engine.begin() as connection:
+    with target_engine.begin() as connection:
         if "source_group_id" not in columns:
             # Keep existing reviewed/pending feedback. Its original document group
             # is unknown, so assign each legacy row a unique group rather than
@@ -62,16 +64,17 @@ def _migrate_clause_feedback_source_group() -> None:
 
     feedback_table = Base.metadata.tables["clause_feedback"]
     for index in feedback_table.indexes:
-        index.create(bind=engine, checkfirst=True)
+        index.create(bind=target_engine, checkfirst=True)
 
 
-def _migrate_adaptive_model_versions_display_label() -> None:
+def _migrate_adaptive_model_versions_display_label(active_engine=None) -> None:
     """Add display_label column to adaptive_model_versions for existing databases."""
-    inspector = inspect(engine)
+    target_engine = active_engine or session_module.engine
+    inspector = inspect(target_engine)
     if not inspector.has_table("adaptive_model_versions"):
         return
 
     columns = {column["name"] for column in inspector.get_columns("adaptive_model_versions")}
     if "display_label" not in columns:
-        with engine.begin() as connection:
+        with target_engine.begin() as connection:
             connection.execute(text("ALTER TABLE adaptive_model_versions ADD COLUMN display_label VARCHAR"))
