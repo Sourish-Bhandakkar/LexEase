@@ -98,8 +98,9 @@ export async function submitClauseFeedbackBatch(payload) {
   return response.data
 }
 
-export async function getAdaptiveLearningDashboard() {
-  const response = await apiClient.get('/adaptive-learning/dashboard')
+export async function getAdaptiveLearningDashboard(adminToken) {
+  const headers = adminToken ? { 'X-Adaptive-Admin-Token': adminToken } : {}
+  const response = await apiClient.get('/adaptive-learning/dashboard', { headers })
   return response.data
 }
 

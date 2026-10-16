@@ -124,7 +124,7 @@ def get_dashboard(db: Session = Depends(get_db)) -> AdaptiveDashboard:
         approved_class_counts=approved_class_counts,
         gate_met=gate_met,
         gate_requirements={"minimum_approved": min_total, "minimum_total": min_total, "minimum_per_class": min_per_class},
-        gate_label="Demonstration-only gate (15 approved clauses, ≥5 per class); does not guarantee model improvement",
+        gate_label="Demonstration-only gate (15 approved clauses, ≥5 per class); reviewed clause examples collected for offline evaluation",
         active_checkpoint_path=active_checkpoint_path,
         live_loaded_version=live_loaded_version,
         needs_reload=needs_reload,
@@ -160,12 +160,16 @@ def submit_feedback(
     if not text:
         raise HTTPException(status_code=400, detail="Clause text is required.")
     group_id = request.source_group_id.strip() if request.source_group_id and request.source_group_id.strip() else f"single_{uuid4()}"
+    note = None
+    if request.explanation and request.explanation.strip():
+        note = f"User explanation: {request.explanation.strip()}"
     record = ClauseFeedback(
         clause_text=text,
         predicted_risk_level=request.predicted_risk_level.value,
         corrected_risk_level=request.corrected_risk_level.value,
         consent=True,
         status="pending",
+        review_note=note,
         source_group_id=group_id,
     )
     db.add(record)
@@ -303,7 +307,11 @@ def review_feedback(
     if record.status != "pending":
         raise HTTPException(status_code=409, detail="Feedback has already been reviewed.")
     record.status = "approved" if request.decision == "approve" else "rejected"
-    record.review_note = request.review_note
+    if request.review_note and request.review_note.strip():
+        if record.review_note:
+            record.review_note = f"{record.review_note} | Reviewer: {request.review_note.strip()}"
+        else:
+            record.review_note = request.review_note.strip()
     record.reviewed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(record)

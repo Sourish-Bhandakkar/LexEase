@@ -23,4 +23,4 @@ Return ONLY valid JSON matching this exact schema. Include every input clause ex
 }
 
 Clauses selected by the user (JSON):
-{{clauses_json}}
+{{clauses_json}}{{retry_instruction}}

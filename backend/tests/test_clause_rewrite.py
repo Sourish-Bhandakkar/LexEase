@@ -412,11 +412,28 @@ def _load_sample_pdf() -> bytes:
     candidates = [
         Path("output/pdf/lexease_test_services_agreement.pdf"),
         Path(__file__).resolve().parents[2] / "output" / "pdf" / "lexease_test_services_agreement.pdf",
+        Path(__file__).resolve().parents[4] / "output" / "pdf" / "lexease_test_services_agreement.pdf",
     ]
     for candidate in candidates:
         if candidate.exists():
             return candidate.read_bytes()
-    raise FileNotFoundError("Could not find lexease_test_services_agreement.pdf")
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    sample_text = (
+        "SERVICES AGREEMENT\n\n"
+        "7. Client Materials and Work Product\n"
+        "Client retains ownership of materials it provides. After Client pays all amounts due, "
+        "Client owns the final reports specifically created for Client under a project statement.\n\n"
+        "8. Indemnification\n"
+        "Client will defend, indemnify, and hold harmless Provider and its affiliates from any "
+        "and all claims, losses, damages, liabilities, and expenses arising out of or relating to the services.\n\n"
+        "9. Limitation of Liability\n"
+        "To the maximum extent permitted by law, Provider's liability will not exceed the fees paid by Client.\n"
+    )
+    page.insert_textbox(fitz.Rect(54, 54, 541, 788), sample_text, fontsize=10)
+    pdf_bytes = doc.tobytes()
+    doc.close()
+    return pdf_bytes
 
 
 def test_proposed_pdf_in_place_replacement_clauses_7_and_8():

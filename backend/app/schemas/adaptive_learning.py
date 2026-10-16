@@ -16,6 +16,7 @@ class ClauseFeedbackCreate(BaseModel):
     predicted_risk_level: RiskLabel
     corrected_risk_level: RiskLabel
     consent: bool
+    explanation: str | None = Field(default=None, max_length=1000)
     source_group_id: str | None = Field(default=None, max_length=100)
 
 

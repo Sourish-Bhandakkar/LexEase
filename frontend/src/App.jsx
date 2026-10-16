@@ -18,6 +18,7 @@ function App() {
             <Route path="/adaptive-learning" element={<AdaptiveLearning />} />
             <Route path="/adaptive-learning/admin" element={<AdaptiveLearningAdmin />} />
             <Route path="/clause-drafting" element={<ClauseDraftingPage />} />
+            <Route path="/draft" element={<ClauseDraftingPage />} />
           </Routes>
         </main>
       </div>

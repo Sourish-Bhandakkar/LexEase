@@ -8,10 +8,7 @@ import {
   getErrorMessage,
   getPendingClauseFeedback,
   getPendingClauseFeedbackSubmissions,
-  reloadActiveModel,
   reviewClauseFeedback,
-  rollbackActiveModel,
-  runCandidateCycle,
 } from '../api/client'
 
 const SESSION_TOKEN_KEY = 'lexease_adaptive_admin_token'
@@ -23,9 +20,8 @@ function AdaptiveLearningAdmin() {
   const [loadingDashboard, setLoadingDashboard] = useState(true)
   const [dashboardError, setDashboardError] = useState('')
 
-  const [adminToken, setAdminToken] = useState(() => {
-    return sessionStorage.getItem(SESSION_TOKEN_KEY) || ''
-  })
+  const [adminToken, setAdminToken] = useState('')
+  const [authenticated, setAuthenticated] = useState(false)
   const [tokenInput, setTokenInput] = useState(() => {
     return sessionStorage.getItem(SESSION_TOKEN_KEY) || ''
   })
@@ -35,10 +31,6 @@ function AdaptiveLearningAdmin() {
   const [queueLoading, setQueueLoading] = useState(false)
   const [queueError, setQueueError] = useState('')
   const [reviewingId, setReviewingId] = useState('')
-
-  const [actionMessage, setActionMessage] = useState('')
-  const [actionError, setActionError] = useState('')
-  const [actionLoading, setActionLoading] = useState(false)
 
   const verifyHealth = useCallback(async () => {
     setCheckingHealth(true)
@@ -51,11 +43,12 @@ function AdaptiveLearningAdmin() {
     }
   }, [])
 
-  const refreshDashboard = useCallback(async () => {
+  const refreshDashboard = useCallback(async (token) => {
+    if (!token) return
     setLoadingDashboard(true)
     setDashboardError('')
     try {
-      setDashboard(await getAdaptiveLearningDashboard())
+      setDashboard(await getAdaptiveLearningDashboard(token))
     } catch (loadError) {
       setDashboardError(getErrorMessage(loadError))
     } finally {
@@ -78,10 +71,12 @@ function AdaptiveLearningAdmin() {
       ])
       setPending(pendingClauses)
       setPendingSubmissions(submissions)
+      return true
     } catch (err) {
       setQueueError(getErrorMessage(err))
       setPending(null)
       setPendingSubmissions(null)
+      return false
     } finally {
       setQueueLoading(false)
     }
@@ -89,31 +84,74 @@ function AdaptiveLearningAdmin() {
 
   useEffect(() => {
     verifyHealth()
-    refreshDashboard()
-    if (adminToken) {
-      loadPendingQueue(adminToken)
+    const savedToken = sessionStorage.getItem(SESSION_TOKEN_KEY) || ''
+    if (savedToken) {
+      void (async () => {
+        const valid = await loadPendingQueue(savedToken)
+        if (valid) {
+          setAdminToken(savedToken)
+          setAuthenticated(true)
+          await refreshDashboard(savedToken)
+        } else {
+          sessionStorage.removeItem(SESSION_TOKEN_KEY)
+        }
+      })()
     }
-  }, [verifyHealth, refreshDashboard, adminToken, loadPendingQueue])
+  }, [verifyHealth, refreshDashboard, loadPendingQueue])
 
-  const handleAuthenticate = (event) => {
+  const handleAuthenticate = async (event) => {
     event.preventDefault()
     const trimmed = tokenInput.trim()
+    const valid = await loadPendingQueue(trimmed)
+    if (!valid) return
     setAdminToken(trimmed)
+    setAuthenticated(true)
     sessionStorage.setItem(SESSION_TOKEN_KEY, trimmed)
-    setActionError('')
-    setActionMessage('')
-    loadPendingQueue(trimmed)
+    await refreshDashboard(trimmed)
   }
 
   const handleLogout = () => {
     setAdminToken('')
+    setAuthenticated(false)
     setTokenInput('')
     sessionStorage.removeItem(SESSION_TOKEN_KEY)
     setPending(null)
     setPendingSubmissions(null)
     setQueueError('')
-    setActionMessage('')
-    setActionError('')
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-[#F8FAF8] text-[#16221C] font-sans">
+        <Navbar healthStatus={healthStatus} checkingHealth={checkingHealth} onCheckHealth={verifyHealth} hasDocument={false} />
+        <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-16 sm:px-6">
+          <section className="rounded-2xl border border-[#DCE6E0] bg-white p-6 shadow-sm sm:p-8">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#176B4D]">Private reviewer area</span>
+            <h1 className="mt-2 text-2xl font-extrabold text-[#12372A]">Clause Feedback Review</h1>
+            <p className="mt-2 text-sm leading-relaxed text-[#66736C]">
+              Enter the reviewer access token to review flagged clauses and view the retained reference collection.
+            </p>
+            <form onSubmit={handleAuthenticate} className="mt-6 flex flex-col gap-3">
+              <label className="sr-only" htmlFor="admin-token-input">Reviewer access token</label>
+              <input
+                id="admin-token-input"
+                type="password"
+                autoComplete="current-password"
+                value={tokenInput}
+                onChange={(event) => setTokenInput(event.target.value)}
+                placeholder="Reviewer access token"
+                className="w-full rounded-xl border border-[#DCE6E0] px-3.5 py-2.5 text-sm focus:border-[#176B4D] focus:outline-none"
+                required
+              />
+              <button type="submit" disabled={queueLoading} className="rounded-xl bg-[#176B4D] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#124F38] disabled:opacity-60">
+                {queueLoading ? 'Checking access…' : 'Unlock reviewer area'}
+              </button>
+            </form>
+            {queueError && <p role="alert" className="mt-3 rounded-xl border border-[#F5C2C2] bg-white p-3 text-sm text-[#C94A4A]">{queueError}</p>}
+          </section>
+        </main>
+      </div>
+    )
   }
 
   const reviewSingleClause = async (id, decision) => {
@@ -122,7 +160,7 @@ function AdaptiveLearningAdmin() {
     try {
       await reviewClauseFeedback(id, decision, adminToken)
       setPending((current) => (current ? current.filter((item) => item.id !== id) : []))
-      await refreshDashboard()
+      await refreshDashboard(adminToken)
     } catch (err) {
       setQueueError(getErrorMessage(err))
     } finally {
@@ -132,77 +170,7 @@ function AdaptiveLearningAdmin() {
 
   const removeReviewedSubmission = async (id) => {
     setPendingSubmissions((current) => (current ? current.filter((item) => item.id !== id) : []))
-    await refreshDashboard()
-  }
-
-  const handleReload = async () => {
-    if (!adminToken) {
-      setActionError('Authenticate with your reviewer token first.')
-      return
-    }
-    setActionLoading(true)
-    setActionError('')
-    setActionMessage('')
-    try {
-      const res = await reloadActiveModel(adminToken)
-      setActionMessage(res.message || `Live service reloaded successfully: active version is now "${res.active_version || 'baseline'}".`)
-      await refreshDashboard()
-    } catch (err) {
-      if (err.code === 'ERR_NETWORK' || (err.request && !err.response)) {
-        setActionError('The LexEase backend is currently unavailable. Reload did not occur. Please verify that the backend is running and try again.')
-      } else {
-        setActionError(getErrorMessage(err))
-      }
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleRollback = async () => {
-    if (!adminToken) {
-      setActionError('Authenticate with your reviewer token first.')
-      return
-    }
-    if (!window.confirm('Rollback to previous active model version?')) return
-    setActionLoading(true)
-    setActionError('')
-    setActionMessage('')
-    try {
-      const res = await rollbackActiveModel(adminToken)
-      setActionMessage(res.message || `Active model successfully rolled back to "${res.active_version || 'baseline'}".`)
-      await refreshDashboard()
-    } catch (err) {
-      if (err.code === 'ERR_NETWORK' || (err.request && !err.response)) {
-        setActionError('The LexEase backend is currently unavailable. Rollback did not occur. Please verify that the backend is running and try again.')
-      } else {
-        setActionError(getErrorMessage(err))
-      }
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleRunCycle = async () => {
-    if (!adminToken) {
-      setActionError('Authenticate with your reviewer token first.')
-      return
-    }
-    setActionLoading(true)
-    setActionError('')
-    setActionMessage('')
-    try {
-      const res = await runCandidateCycle(adminToken)
-      setActionMessage(res.message || 'Candidate training cycle queued successfully. The worker will process it.')
-      await refreshDashboard()
-    } catch (err) {
-      if (err.code === 'ERR_NETWORK' || (err.request && !err.response)) {
-        setActionError('The LexEase backend is currently unavailable. Candidate cycle was not queued. Please verify that the backend is running and try again.')
-      } else {
-        setActionError(getErrorMessage(err))
-      }
-    } finally {
-      setActionLoading(false)
-    }
+    await refreshDashboard(adminToken)
   }
 
   return (
@@ -223,23 +191,17 @@ function AdaptiveLearningAdmin() {
               <span className="text-xs text-[#8C9A92]">Authorized Reviewers Only</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-[#12372A]">
-              Adaptive Learning Review Console
+              Flag Review & Reviewed Clause Library
             </h1>
             <p className="max-w-2xl text-sm leading-relaxed text-[#66736C]">
-              Review submitted clause corrections, verify risk categories, and oversee candidate model evaluations. All model updates require human approval and rigorous benchmark checks.
+              Review clause-label flags, verify suggested corrections, and maintain approved examples for possible future offline analysis. Reviews do not update the live model.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              to="/adaptive-learning"
-              className="rounded-xl border border-[#DCE6E0] bg-white px-4 py-2 text-xs font-semibold text-[#176B4D] shadow-sm hover:bg-[#F3F7F5]"
-            >
-              ← Public Metrics
-            </Link>
             <button
               type="button"
               onClick={() => {
-                refreshDashboard()
+                refreshDashboard(adminToken)
                 if (adminToken) loadPendingQueue(adminToken)
               }}
               className="rounded-xl bg-[#176B4D] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#124F38]"
@@ -248,6 +210,27 @@ function AdaptiveLearningAdmin() {
             </button>
           </div>
         </header>
+
+        <nav aria-label="Reviewer sections" className="flex flex-wrap gap-3">
+          <a
+            href="#review-clause-flags"
+            className="rounded-xl bg-[#176B4D] px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#124F38]"
+          >
+            Review flagged clauses <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5">{pending?.length ?? dashboard?.pending_feedback_count ?? 0}</span>
+          </a>
+          <Link
+            to="/model-management"
+            className="rounded-xl border border-[#DCE6E0] bg-white px-4 py-2.5 text-sm font-semibold text-[#66736C] shadow-sm hover:bg-[#F3F7F5]"
+          >
+            Open separate model page
+          </Link>
+          <a
+            href="#review-document-submissions"
+            className="rounded-xl border border-[#DCE6E0] bg-white px-4 py-2.5 text-sm font-semibold text-[#176B4D] shadow-sm hover:bg-[#F3F7F5]"
+          >
+            Review submitted documents <span className="ml-1 rounded-full bg-[#E8F1EC] px-2 py-0.5">{pendingSubmissions?.length ?? dashboard?.pending_feedback_submission_count ?? 0}</span>
+          </a>
+        </nav>
 
         {dashboardError && (
           <p role="alert" className="rounded-xl border border-[#F5C2C2] bg-white p-4 text-sm text-[#C94A4A]">
@@ -259,11 +242,11 @@ function AdaptiveLearningAdmin() {
         <section className="rounded-2xl border border-[#DCE6E0] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-bold text-[#12372A]">Reviewer Authentication</h2>
+              <h2 className="text-sm font-bold text-[#12372A]">Reviewer Access</h2>
               <p className="text-xs text-[#66736C]">
                 {adminToken
-                  ? 'Authenticated. Admin actions and review queue are unlocked.'
-                  : 'Enter your administrator token to review submissions and manage model cycles.'}
+                  ? 'Access verified. The review queue and retained examples are unlocked.'
+                  : 'Enter your reviewer access token to unlock this private area.'}
               </p>
             </div>
             {adminToken ? (
@@ -314,120 +297,62 @@ function AdaptiveLearningAdmin() {
           )}
         </section>
 
-        {/* Model Readiness and Controls */}
-        <section className="space-y-4 rounded-2xl border border-[#DCE6E0] bg-white p-5 shadow-sm sm:p-6">
+        {/* Reviewed Dataset Collection */}
+        <section id="reviewed-dataset" className="scroll-mt-24 space-y-4 rounded-2xl border border-[#DCE6E0] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#66736C]">
-                Demonstration Eligibility Gate
+                Offline Analysis Dataset
               </p>
-              <h2 className="text-lg font-bold text-[#12372A]">Candidate Training Readiness</h2>
+              <h2 className="text-lg font-bold text-[#12372A]">Reviewed Clause Dataset</h2>
             </div>
             <span
               className={`rounded-full px-3 py-1 text-xs font-bold ${
-                dashboard?.gate_met
+                dashboard?.approved_feedback_count
                   ? 'bg-[#E8F1EC] text-[#176B4D]'
                   : 'bg-[#FFF8E6] text-[#B45309]'
               }`}
             >
-              {dashboard?.gate_met ? '✓ Demonstration Gate Met' : '⚠ Demonstration Gate Unmet'}
+              {dashboard?.approved_feedback_count ?? 0} Approved & Stored
             </span>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="rounded-xl border border-[#E8F1EC] bg-[#F8FAF8] p-3 text-center">
-              <p className="text-xs text-[#66736C]">Approved Clauses</p>
+              <p className="text-xs text-[#66736C]">Approved & Stored Clauses</p>
               <p className="mt-1 text-xl font-extrabold text-[#12372A]">
                 {dashboard?.approved_feedback_count ?? 0}{' '}
-                <span className="text-xs font-normal text-[#8C9A92]">/ 15 min</span>
+                <span className="text-xs font-normal text-[#8C9A92]">clauses</span>
               </p>
             </div>
             <div className="rounded-xl border border-[#E8F1EC] bg-[#F8FAF8] p-3 text-center">
               <p className="text-xs text-[#66736C]">Low Risk</p>
               <p className="mt-1 text-xl font-extrabold text-[#12372A]">
-                {dashboard?.approved_class_counts?.LOW ?? dashboard?.approved_class_counts?.low ?? 0}{' '}
-                <span className="text-xs font-normal text-[#8C9A92]">/ 5 min</span>
+                {dashboard?.approved_class_counts?.LOW ?? dashboard?.approved_class_counts?.low ?? 0}
               </p>
             </div>
             <div className="rounded-xl border border-[#E8F1EC] bg-[#F8FAF8] p-3 text-center">
               <p className="text-xs text-[#66736C]">Medium Risk</p>
               <p className="mt-1 text-xl font-extrabold text-[#12372A]">
-                {dashboard?.approved_class_counts?.MEDIUM ?? dashboard?.approved_class_counts?.medium ?? 0}{' '}
-                <span className="text-xs font-normal text-[#8C9A92]">/ 5 min</span>
+                {dashboard?.approved_class_counts?.MEDIUM ?? dashboard?.approved_class_counts?.medium ?? 0}
               </p>
             </div>
             <div className="rounded-xl border border-[#E8F1EC] bg-[#F8FAF8] p-3 text-center">
               <p className="text-xs text-[#66736C]">High Risk</p>
               <p className="mt-1 text-xl font-extrabold text-[#12372A]">
-                {dashboard?.approved_class_counts?.HIGH ?? dashboard?.approved_class_counts?.high ?? 0}{' '}
-                <span className="text-xs font-normal text-[#8C9A92]">/ 5 min</span>
+                {dashboard?.approved_class_counts?.HIGH ?? dashboard?.approved_class_counts?.high ?? 0}
               </p>
             </div>
           </div>
 
           <div className="rounded-xl bg-[#F0F4F2] p-3 text-xs leading-relaxed text-[#526058]">
-            <strong>Demonstration-only safeguard:</strong> The threshold of 15 approved training clauses (≥5 per class) is a temporary setting designed to demonstrate the candidate evaluation and promotion workflow. Small sample sizes are not statistical evidence that a candidate will improve or generalize.
+            <strong>Reviewed dataset safeguard:</strong> Approved clauses are saved in the database as verified reference examples for offline evaluation and future analysis. Approval does not retrain the live model or start online cycles.
           </div>
 
-          {dashboard?.needs_reload && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-xs text-[#92400E]">
-              <div>
-                <strong>Live service reload pending:</strong> Active manifest points to{' '}
-                <code className="rounded bg-white/70 px-1 py-0.5">{dashboard.active_version}</code>, but in-memory service is running{' '}
-                <code className="rounded bg-white/70 px-1 py-0.5">{dashboard.live_loaded_version || 'baseline'}</code>.
-              </div>
-              <button
-                type="button"
-                onClick={handleReload}
-                disabled={actionLoading || !adminToken}
-                className="rounded-lg bg-[#B45309] px-3 py-1.5 font-bold text-white hover:bg-[#92400E] disabled:opacity-50"
-              >
-                {actionLoading ? 'Reloading…' : 'Reload Live Service'}
-              </button>
-            </div>
-          )}
-
-          {actionMessage && (
-            <div className="rounded-xl border border-[#A7F3D0] bg-[#ECFDF5] p-3 text-xs font-semibold text-[#065F46]">
-              {actionMessage}
-            </div>
-          )}
-          {actionError && (
-            <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-xs font-semibold text-[#991B1B]">
-              {actionError}
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2.5 pt-1">
-            <button
-              type="button"
-              disabled={!dashboard?.gate_met || actionLoading || !adminToken}
-              onClick={handleRunCycle}
-              className="rounded-xl bg-[#176B4D] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#124F38] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {actionLoading ? 'Working…' : 'Run Candidate Cycle'}
-            </button>
-            <button
-              type="button"
-              disabled={actionLoading || !adminToken}
-              onClick={handleReload}
-              className="rounded-xl border border-[#DCE6E0] bg-white px-3.5 py-2 text-xs font-semibold text-[#176B4D] hover:bg-[#F3F7F5] disabled:opacity-50"
-            >
-              Reload Active Model
-            </button>
-            <button
-              type="button"
-              disabled={actionLoading || !adminToken}
-              onClick={handleRollback}
-              className="rounded-xl border border-[#F5C2C2] bg-white px-3.5 py-2 text-xs font-semibold text-[#C94A4A] hover:bg-[#FFF5F5] disabled:opacity-50"
-            >
-              Rollback Model
-            </button>
-          </div>
         </section>
 
         {/* Review Queue: Document Batches */}
-        <section className="space-y-4 rounded-2xl border border-[#DCE6E0] bg-white p-5 shadow-sm sm:p-6">
+        <section id="review-document-submissions" className="scroll-mt-24 space-y-4 rounded-2xl border border-[#DCE6E0] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8F1EC] pb-3">
             <div>
               <h2 className="text-base font-bold text-[#12372A]">Document Batch Submissions</h2>
@@ -461,7 +386,7 @@ function AdaptiveLearningAdmin() {
         </section>
 
         {/* Review Queue: Individual Clauses */}
-        <section className="space-y-4 rounded-2xl border border-[#DCE6E0] bg-white p-5 shadow-sm sm:p-6">
+        <section id="review-clause-flags" className="scroll-mt-24 space-y-4 rounded-2xl border border-[#DCE6E0] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8F1EC] pb-3">
             <div>
               <h2 className="text-base font-bold text-[#12372A]">Individual Clause Feedback Queue</h2>
@@ -486,6 +411,11 @@ function AdaptiveLearningAdmin() {
                   className="space-y-3 rounded-xl border border-[#E8F1EC] bg-[#F8FAF8] p-4 transition-colors hover:border-[#C8DECE]"
                 >
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#16221C]">{item.clause_text}</p>
+                  {item.review_note && (
+                    <div className="rounded-lg bg-[#EAEFEA] px-3 py-1.5 text-xs text-[#2D4537] italic">
+                      {item.review_note}
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                     <p className="text-xs text-[#66736C]">
                       System predicted: <strong className="uppercase text-[#12372A]">{item.predicted_risk_level}</strong> · User suggested: <strong className="uppercase text-[#176B4D]">{item.corrected_risk_level}</strong>
@@ -497,7 +427,7 @@ function AdaptiveLearningAdmin() {
                         onClick={() => reviewSingleClause(item.id, 'approve')}
                         className="rounded-lg bg-[#176B4D] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#124F38] disabled:opacity-50"
                       >
-                        Approve for Training
+                        Approve Example
                       </button>
                       <button
                         type="button"

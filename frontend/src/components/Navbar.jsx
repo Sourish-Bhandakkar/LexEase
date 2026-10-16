@@ -123,9 +123,14 @@ function Navbar({ healthStatus, checkingHealth, onCheckHealth, hasDocument, onRe
           >
             About
           </button>
-          <button type="button" onClick={() => handleNavClick('/adaptive-learning')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer ${location.pathname === '/adaptive-learning' ? 'text-[#12372A] bg-[#E8F1EC] font-bold shadow-2xs' : 'text-[#66736C] hover:text-[#16221C] hover:bg-[#F3F7F5]'}`}>
-            Adaptive Learning
-          </button>        </nav>
+          <button
+            type="button"
+            onClick={() => handleNavClick('/adaptive-learning')}
+            className={`px-4 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer ${location.pathname.startsWith('/adaptive-learning') ? 'text-[#12372A] bg-[#E8F1EC] font-bold shadow-2xs' : 'text-[#66736C] hover:text-[#16221C] hover:bg-[#F3F7F5]'}`}
+          >
+            Clause Feedback
+          </button>
+        </nav>
 
         {/* RIGHT ZONE: Actions (~25–30%) */}
         <div className="flex items-center justify-end flex-shrink-0 space-x-2 sm:space-x-3 lg:w-1/4">
@@ -258,9 +263,14 @@ function Navbar({ healthStatus, checkingHealth, onCheckHealth, hasDocument, onRe
           >
             About
           </button>
-          <button type="button" onClick={() => handleNavClick('/adaptive-learning')} className={`w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all ${location.pathname === '/adaptive-learning' ? 'text-[#12372A] bg-[#E8F1EC] font-bold' : 'text-[#66736C] hover:text-[#16221C] hover:bg-[#F3F7F5]'}`}>
-            Adaptive Learning
-          </button>        </div>
+          <button
+            type="button"
+            onClick={() => handleNavClick('/adaptive-learning')}
+            className={`w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all ${location.pathname.startsWith('/adaptive-learning') ? 'text-[#12372A] bg-[#E8F1EC] font-bold' : 'text-[#66736C] hover:text-[#16221C] hover:bg-[#F3F7F5]'}`}
+          >
+            Clause Feedback
+          </button>
+        </div>
       )}
     </header>
   )

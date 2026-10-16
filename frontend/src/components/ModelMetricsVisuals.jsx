@@ -171,6 +171,7 @@ export function ModelHistoryGraph({ history, activeVersion = null }) {
   ]
   const latest = points[points.length - 1]
   const previous = points.length > 1 ? points[points.length - 2] : null
+  const latestStatus = getVersionStatusLabel(latest.version, latest.status, activeVersion)
   const formatPercent = (value) => Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : '—'
   const formatChange = (value, prior) => {
     if (!Number.isFinite(prior)) return 'First recorded result'
@@ -192,7 +193,12 @@ export function ModelHistoryGraph({ history, activeVersion = null }) {
         <div>
           <h3 className="text-base font-bold text-[#12372A]">Model Evaluation Results</h3>
           <p className="text-xs text-[#66736C]">
-            Scores from the held-out validation set. Changes compare the latest evaluation with the one before it.
+            Held-out validation scores for the latest evaluated version. Changes compare it with the previous completed evaluation.
+          </p>
+          <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#526058]">
+            <span>Latest evaluated version:</span>
+            <span className="font-semibold text-[#12372A]">{latest.version}</span>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusTone(latest)}`}>{latestStatus}</span>
           </p>
         </div>
       </div>

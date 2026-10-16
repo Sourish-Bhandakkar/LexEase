@@ -55,7 +55,7 @@ function FeedbackSubmissionReview({ submission, adminToken, onReviewed }) {
           </div>
         ))}
       </div>
-      <p className="text-xs leading-relaxed text-[#66736C]">Only clauses given a verified label below are added to the approved training set. The system prediction alone is never treated as ground truth.</p>
+      <p className="text-xs leading-relaxed text-[#66736C]">Only clauses given a verified label below are saved as reviewed examples for future offline analysis or model evaluation. The system prediction alone is never treated as ground truth, and approval does not change the live model.</p>
       {error && <p role="alert" className="text-xs text-[#C94A4A]">{error}</p>}
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={busy || !Object.values(labels).some(Boolean)} onClick={() => submitReview('annotate')} className="rounded-lg bg-[#176B4D] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save verified labels'}</button>
